@@ -1,0 +1,11 @@
+{
+  "name": "glow-os",
+  "version": "2.0.0",
+  "description": "Glow Modest Wear business dashboard — real Shopify, Meta Ads, and Google Sheets data",
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

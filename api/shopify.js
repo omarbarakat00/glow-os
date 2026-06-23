@@ -1,0 +1,175 @@
+// api/shopify.js
+// Vercel serverless function — proxies Shopify Admin API
+// Env vars required: SHOPIFY_STORE, SHOPIFY_ACCESS_TOKEN
+
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const STORE = process.env.SHOPIFY_STORE; // e.g. glowmodest.myshopify.com
+  const TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
+
+  if (!STORE || !TOKEN) {
+    return res.status(500).json({ error: 'Set SHOPIFY_STORE and SHOPIFY_ACCESS_TOKEN in Vercel env vars.' });
+  }
+
+  const BASE = `https://${STORE}/admin/api/2024-04`;
+  const HDRS = { 'X-Shopify-Access-Token': TOKEN, 'Content-Type': 'application/json' };
+
+  // Cairo is UTC+2 (no DST since 2011)
+  const CAIRO_MS = 2 * 60 * 60 * 1000;
+
+  function cairoDateKey(utcMs) {
+    // Returns "YYYY-MM-DD" in Cairo local time
+    const d = new Date(utcMs + CAIRO_MS);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function cairoMidnightUTC(dateKey) {
+    // Given "YYYY-MM-DD", returns UTC ms for midnight in Cairo
+    return new Date(dateKey + 'T00:00:00Z').getTime() - CAIRO_MS;
+  }
+
+  async function shopify(path) {
+    const r = await fetch(`${BASE}${path}`, { headers: HDRS });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.errors || `Shopify ${r.status}: ${path}`);
+    return data;
+  }
+
+  // Fetch all orders since a given ISO timestamp, following cursor pagination.
+  // Safety cap: 20 pages (5000 orders). Filters out cancelled orders.
+  async function fetchOrders(sinceISO, fields) {
+    let orders = [];
+    let url = `${BASE}/orders.json?status=any&created_at_min=${sinceISO}&limit=250&fields=${fields}`;
+    let pages = 0;
+
+    while (url && pages < 20) {
+      const r = await fetch(url, { headers: HDRS });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(`Shopify orders API: ${err.errors || r.status}`);
+      }
+      const data = await r.json();
+      orders = orders.concat((data.orders || []).filter(o => !o.cancelled_at));
+      pages++;
+
+      // Cursor-based pagination via Link header
+      const link = r.headers.get('Link') || '';
+      const next = link.match(/<([^>]+)>;\s*rel="next"/);
+      url = next ? next[1] : null;
+    }
+    return orders;
+  }
+
+  function metrics(orders) {
+    const rev = orders.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+    const count = orders.length;
+    const refunds = orders.filter(o => o.refunds && o.refunds.length > 0).length;
+    return {
+      rev: Math.round(rev),
+      orders: count,
+      aov: count > 0 ? Math.round(rev / count) : 0,
+      return_rate: count > 0 ? parseFloat((refunds / count).toFixed(3)) : 0,
+    };
+  }
+
+  try {
+    const now = Date.now();
+    const todayKey = cairoDateKey(now);
+    const todayStart = cairoMidnightUTC(todayKey);
+    const yestStart = todayStart - 86400000;
+    const yestKey = cairoDateKey(yestStart + CAIRO_MS);
+
+    // Month start
+    const [y, m] = todayKey.split('-');
+    const monthKey = `${y}-${m}-01`;
+    const monthStart = cairoMidnightUTC(monthKey);
+
+    // 30 days ago for top-products window
+    const thirtyDaysAgo = todayStart - 30 * 86400000;
+
+    // Fetch from whichever is earlier: 30 days ago or month start
+    const fetchSince = new Date(Math.min(monthStart, thirtyDaysAgo)).toISOString();
+
+    const FIELDS = 'id,total_price,line_items,created_at,cancelled_at,refunds';
+
+    const [allOrders, activeCount, draftCount] = await Promise.all([
+      fetchOrders(fetchSince, FIELDS),
+      shopify('/products/count.json?status=active').then(d => d.count || 0),
+      shopify('/products/count.json?status=draft').then(d => d.count || 0),
+    ]);
+
+    // Partition orders into time windows
+    const todayOrders = allOrders.filter(o => new Date(o.created_at).getTime() >= todayStart);
+    const yestOrders  = allOrders.filter(o => {
+      const t = new Date(o.created_at).getTime();
+      return t >= yestStart && t < todayStart;
+    });
+    const mtdOrders   = allOrders.filter(o => new Date(o.created_at).getTime() >= monthStart);
+    const last30Orders = allOrders.filter(o => new Date(o.created_at).getTime() >= thirtyDaysAgo);
+
+    // 7-day chart: one bucket per Cairo day
+    const last7days = [];
+    for (let i = 6; i >= 0; i--) {
+      const dayStart = todayStart - i * 86400000;
+      const dayEnd   = dayStart + 86400000;
+      const dayKey   = cairoDateKey(dayStart + CAIRO_MS);
+      const dayRev   = allOrders
+        .filter(o => { const t = new Date(o.created_at).getTime(); return t >= dayStart && t < dayEnd; })
+        .reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+      last7days.push({ date: dayKey, rev: Math.round(dayRev) });
+    }
+
+    // Top products by revenue (last 30 days), aggregated by product title
+    const productMap = {};
+    for (const order of last30Orders) {
+      for (const item of order.line_items || []) {
+        const key = item.title || 'Unknown';
+        if (!productMap[key]) productMap[key] = { name: key, rev: 0, orders: 0 };
+        productMap[key].rev    += parseFloat(item.price || 0) * (item.quantity || 1);
+        productMap[key].orders += item.quantity || 1;
+      }
+    }
+    const top = Object.values(productMap)
+      .sort((a, b) => b.rev - a.rev)
+      .slice(0, 10)
+      .map(p => ({
+        name: p.name,
+        rev: Math.round(p.rev),
+        orders: p.orders,
+        net: Math.round(p.rev * 0.62), // approx 62% gross margin
+      }));
+
+    const today = metrics(todayOrders);
+    const yest  = metrics(yestOrders);
+    const mtd   = metrics(mtdOrders);
+
+    res.json({
+      // Today
+      rev_today:    today.rev,
+      orders_today: today.orders,
+      aov:          today.aov,
+      // MTD
+      rev_mtd:      mtd.rev,
+      return_rate:  mtd.return_rate,
+      // Store
+      active:  activeCount,
+      drafts:  draftCount,
+      cvr:     0, // requires Shopify Analytics API (Plus plan)
+      // History
+      top,
+      last7days,
+      yesterday: {
+        rev_today:    yest.rev,
+        orders_today: yest.orders,
+        aov:          yest.aov,
+        return_rate:  yest.return_rate,
+      },
+    });
+  } catch (e) {
+    console.error('[Shopify]', e);
+    res.status(500).json({ error: e.message });
+  }
+};

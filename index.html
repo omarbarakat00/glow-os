@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glow OS</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0a;color:#f0f0f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;min-height:100vh}
+:root{--bg:#0a0a0a;--s:#111;--s2:#181818;--b:#222;--b2:#2a2a2a;--t:#f0f0f0;--t2:#888;--t3:#555;--gold:#c9a96e;--green:#4ade80;--red:#f87171;--yellow:#fbbf24}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:50px;border-bottom:1px solid var(--b);background:var(--s);position:sticky;top:0;z-index:100}
+.logo{font-family:'SF Mono',monospace;font-size:14px;letter-spacing:.12em;color:var(--gold)}
+.logo span{color:var(--t3)}
+.live-badge{display:flex;align-items:center;gap:5px;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--green);font-family:'SF Mono',monospace}
+.dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.upd{font-size:11px;color:var(--t3);font-family:'SF Mono',monospace}
+.refresh-btn{background:var(--gold);color:#000;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer}
+.refresh-btn:hover{background:#a07840;color:#fff}
+.refresh-btn:disabled{background:var(--b2);color:var(--t3);cursor:not-allowed}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 50px)}
+
+/* SIDEBAR */
+.sidebar{border-right:1px solid var(--b);background:var(--s);padding:16px 0;display:flex;flex-direction:column}
+.sb-label{font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--t3);text-transform:uppercase;padding:0 20px;margin:16px 0 8px}
+.nav{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:0 8px;border-radius:6px;cursor:pointer;color:var(--t2);font-size:13px;transition:all .15s}
+.nav:hover{background:var(--s2);color:var(--t)}
+.nav.on{background:rgba(201,169,110,.1);color:var(--gold);font-weight:500}
+.nav-ic{width:18px;text-align:center;font-size:14px}
+.todo-badge{margin-left:auto;background:var(--gold);color:#000;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;display:none}
+
+/* GOAL */
+.goal{padding:16px;margin-top:auto;border-top:1px solid var(--b)}
+.goal-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:600;margin-bottom:8px}
+.goal-nums{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+.goal-cur{font-family:'SF Mono',monospace;font-size:17px;color:var(--gold)}
+.goal-tgt{font-size:11px;color:var(--t3);font-family:'SF Mono',monospace}
+.bar-track{height:4px;background:var(--b2);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;background:var(--gold);border-radius:2px;transition:width 1s ease}
+.goal-pct{font-size:11px;color:var(--t2);margin-top:5px;font-family:'SF Mono',monospace}
+
+/* CONTENT */
+.content{padding:24px 28px;overflow-y:auto}
+.page{display:none}.page.on{display:block}
+.pg-title{font-size:18px;font-weight:600;margin-bottom:4px}
+.pg-sub{font-size:12px;color:var(--t2);margin-bottom:22px}
+
+/* ERROR BANNER */
+.err-banner{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--red);margin-bottom:16px;display:none}
+
+/* AI BRIEFING */
+.briefing{background:var(--s);border:1px solid var(--b);border-left:3px solid var(--gold);border-radius:10px;padding:18px 20px;margin-bottom:20px}
+.briefing-lbl{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.briefing-txt{font-size:13px;color:var(--t2);line-height:1.7}
+.briefing-txt strong{color:var(--t)}
+
+/* ALERTS */
+.alerts{margin-bottom:16px}
+.alert{display:flex;align-items:flex-start;gap:10px;padding:11px 15px;border-radius:8px;margin-bottom:8px;font-size:12px;color:var(--t2);line-height:1.5}
+.alert strong{color:var(--t)}
+.a-red{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2)}
+.a-yellow{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2)}
+.a-green{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2)}
+
+/* CARDS */
+.cards{display:grid;gap:12px;margin-bottom:18px}
+.c4{grid-template-columns:repeat(4,1fr)}
+.c3{grid-template-columns:repeat(3,1fr)}
+.c2{grid-template-columns:repeat(2,1fr)}
+.card{background:var(--s);border:1px solid var(--b);border-radius:10px;padding:17px 18px}
+.c-lbl{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:9px}
+.c-val{font-family:'SF Mono',monospace;font-size:22px;color:var(--t);margin-bottom:3px}
+.c-sub{font-size:11px;color:var(--t2)}
+
+/* SECTION */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin:20px 0 12px}
+.sec-ttl{font-size:12px;font-weight:600;color:var(--t2);letter-spacing:.06em}
+.sec-tag{font-size:10px;font-family:'SF Mono',monospace;color:var(--t3);background:var(--b2);padding:2px 8px;border-radius:4px}
+
+/* TABLE */
+.tbl-wrap{background:var(--s);border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-bottom:18px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);padding:10px 14px;border-bottom:1px solid var(--b)}
+td{padding:10px 14px;font-size:12px;color:var(--t2);border-bottom:1px solid var(--b)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--s2);color:var(--t)}
+td:first-child{color:var(--t);font-weight:500}
+.mono{font-family:'SF Mono',monospace}
+.gold{color:var(--gold)}
+
+/* TODO */
+.todo-row{display:flex;gap:8px;margin-bottom:14px}
+.todo-inp{flex:1;background:var(--s);border:1px solid var(--b2);border-radius:7px;padding:10px 13px;color:var(--t);font-size:13px;outline:none}
+.todo-inp:focus{border-color:var(--gold)}
+.todo-inp::placeholder{color:var(--t3)}
+.prio-sel{background:var(--s);border:1px solid var(--b2);border-radius:7px;padding:0 10px;color:var(--t2);font-size:12px;outline:none;cursor:pointer}
+.add-btn{background:var(--gold);color:#000;border:none;border-radius:7px;padding:10px 15px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
+.add-btn:hover{background:#a07840;color:#fff}
+.filters{display:flex;gap:6px;margin-bottom:12px}
+.fil{padding:4px 12px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid var(--b2);color:var(--t2);background:transparent}
+.fil.on{background:var(--gold);color:#000;border-color:var(--gold);font-weight:600}
+.todo-list{display:flex;flex-direction:column;gap:6px}
+.ti{display:flex;align-items:center;gap:11px;padding:11px 13px;background:var(--s);border:1px solid var(--b);border-radius:8px}
+.ti:hover .del-btn{opacity:1}
+.ti.done{opacity:.4}
+.chk{width:18px;height:18px;border:1.5px solid var(--b2);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.chk.on{background:var(--gold);border-color:var(--gold)}
+.chk.on::after{content:'✓';font-size:11px;color:#000;font-weight:700}
+.ti-txt{flex:1;font-size:13px;color:var(--t);cursor:pointer}
+.ti.done .ti-txt{text-decoration:line-through;color:var(--t3)}
+.prio-tag{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;cursor:pointer;border:none}
+.p-h{background:rgba(248,113,113,.15);color:var(--red)}
+.p-m{background:rgba(251,191,36,.15);color:var(--yellow)}
+.p-l{background:rgba(74,222,128,.15);color:var(--green)}
+.del-btn{background:none;border:none;color:var(--t3);cursor:pointer;font-size:13px;opacity:0;transition:opacity .15s}
+
+/* TEAM */
+.team-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.tc{background:var(--s);border:1px solid var(--b);border-radius:10px;padding:15px}
+.tc-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.av{width:32px;height:32px;border-radius:7px;background:var(--b2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--gold);font-family:'SF Mono',monospace;flex-shrink:0}
+.tc-name{font-weight:600;font-size:13px}
+.tc-role{font-size:11px;color:var(--t3);margin-top:1px}
+.tc-notes{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:8px 10px;color:var(--t2);font-size:12px;resize:none;outline:none;min-height:52px;font-family:-apple-system,sans-serif}
+.tc-notes:focus{border-color:var(--gold);color:var(--t)}
+
+/* CALENDAR */
+.cal-list{display:flex;flex-direction:column;gap:8px}
+.cal-ev{display:flex;gap:14px;padding:12px 15px;background:var(--s);border:1px solid var(--b);border-radius:8px}
+.cal-time{font-family:'SF Mono',monospace;font-size:12px;color:var(--gold);min-width:50px;margin-top:1px}
+.cal-title{font-size:13px;font-weight:500}
+.cal-desc{font-size:11px;color:var(--t2);margin-top:2px}
+
+/* LOADING */
+.loading-bg{position:fixed;inset:0;background:rgba(10,10,10,.88);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9998}
+.loading-bg.on{display:flex}
+.spinner{width:34px;height:34px;border:2px solid var(--b2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{color:var(--t2);font-size:13px;font-family:'SF Mono',monospace}
+
+.empty{color:var(--t3);font-size:12px;text-align:center;padding:24px 0}
+
+/* SECTION ERROR */
+.sec-err{background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.15);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--red);margin-bottom:12px;display:none}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-bg" id="loadingBg">
+  <div class="spinner"></div>
+  <div class="loading-txt" id="loadingTxt">Loading...</div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:14px">
+    <div class="logo">GLOW <span>OS</span></div>
+    <div class="live-badge"><div class="dot"></div>LIVE</div>
+  </div>
+  <div class="topbar-right">
+    <div class="upd" id="upd">Not loaded</div>
+    <button class="refresh-btn" id="refBtn" onclick="refresh()">↻ Refresh</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-label">Dashboard</div>
+    <div class="nav on" onclick="nav('overview',this)"><span class="nav-ic">◈</span> Overview</div>
+    <div class="nav" onclick="nav('shopify',this)"><span class="nav-ic">🛍</span> Shopify</div>
+    <div class="nav" onclick="nav('meta',this)"><span class="nav-ic">📣</span> Meta Ads</div>
+    <div class="nav" onclick="nav('finance',this)"><span class="nav-ic">📊</span> Finance</div>
+    <div class="nav" onclick="nav('today',this)"><span class="nav-ic">📅</span> Today</div>
+    <div class="sb-label">Manage</div>
+    <div class="nav" onclick="nav('todo',this)">
+      <span class="nav-ic">✅</span> To-Do
+      <span class="todo-badge" id="todoBadge"></span>
+    </div>
+    <div class="nav" onclick="nav('team',this)"><span class="nav-ic">👥</span> Team</div>
+
+    <div class="goal">
+      <div class="goal-lbl">June Target</div>
+      <div class="goal-nums">
+        <div class="goal-cur" id="goalCur">—</div>
+        <div class="goal-tgt">/ 2M EGP</div>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="goalBar" style="width:0%"></div></div>
+      <div class="goal-pct" id="goalPct">Press Refresh to load</div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div class="err-banner" id="errBanner"></div>
+
+    <!-- OVERVIEW -->
+    <div class="page on" id="p-overview">
+      <div class="pg-title" id="greeting">Good day, Omar ☀️</div>
+      <div class="pg-sub" id="dateStr">—</div>
+
+      <!-- PACE BANNER -->
+      <div id="paceBanner" style="display:none;background:var(--s);border:1px solid var(--b);border-radius:10px;padding:14px 20px;margin-bottom:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:4px">JUNE PACE</div>
+          <div style="font-size:14px;color:var(--t2)">At today's rate, June closes at <strong id="paceAmt" style="color:var(--gold)">—</strong></div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:4px">TODAY'S PACE</div>
+          <div style="font-size:14px;color:var(--t2)"><strong id="paceHourly" style="color:var(--t)">—</strong> <span style="color:var(--t3)">EGP/hr · <span id="paceStatus"></span></span></div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:4px">ROAS</div>
+          <div style="font-family:'SF Mono',monospace;font-size:22px;color:var(--green)" id="roas">—</div>
+        </div>
+      </div>
+
+      <!-- AI BRIEFING -->
+      <div class="briefing">
+        <div class="briefing-lbl">⚡ AI Briefing</div>
+        <div class="briefing-txt" id="briefingTxt">Press <strong>Refresh</strong> to pull live data and generate your daily briefing.</div>
+      </div>
+
+      <div class="alerts" id="alertsEl"></div>
+
+      <!-- ROW 1 -->
+      <div class="cards c4">
+        <div class="card">
+          <div class="c-lbl">Today's Revenue</div>
+          <div class="c-val" id="o-rev">—</div>
+          <div class="c-sub">EGP</div>
+          <div id="o-rev-d" style="margin-top:6px;font-size:11px;font-family:'SF Mono',monospace"></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Orders Today</div>
+          <div class="c-val" id="o-ord">—</div>
+          <div class="c-sub">confirmed</div>
+          <div id="o-ord-d" style="margin-top:6px;font-size:11px;font-family:'SF Mono',monospace"></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Ad Spend Today</div>
+          <div class="c-val" id="o-spend">—</div>
+          <div class="c-sub">EGP</div>
+          <div id="o-spend-d" style="margin-top:6px;font-size:11px;font-family:'SF Mono',monospace"></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Return Rate</div>
+          <div class="c-val" id="o-ret">—</div>
+          <div class="c-sub">June MTD · target ≤20%</div>
+          <div id="o-ret-d" style="margin-top:6px;font-size:11px;font-family:'SF Mono',monospace"></div>
+        </div>
+      </div>
+
+      <!-- ROW 2 -->
+      <div class="cards c4">
+        <div class="card">
+          <div class="c-lbl">CPA</div>
+          <div class="c-val" id="o-cpa">—</div>
+          <div class="c-sub">EGP per purchase</div>
+          <div id="o-cpa-d" style="margin-top:6px;font-size:11px;font-family:'SF Mono',monospace"></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">AOV</div>
+          <div class="c-val" id="o-aov">—</div>
+          <div class="c-sub">target: 2,000 EGP</div>
+          <div id="o-aov-d" style="margin-top:6px;font-size:11px;font-family:'SF Mono',monospace"></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Conv. Rate</div>
+          <div class="c-val" id="o-cvr">—</div>
+          <div class="c-sub">sessions → orders</div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Net Profit (June)</div>
+          <div class="c-val" id="o-profit">—</div>
+          <div class="c-sub">from CFO Sheet</div>
+        </div>
+      </div>
+
+      <!-- ROW 3: 7-day chart + today net -->
+      <div class="cards c3" style="margin-bottom:18px">
+        <div class="card" style="grid-column:span 2">
+          <div class="c-lbl" style="margin-bottom:12px">REVENUE — LAST 7 DAYS</div>
+          <div style="display:flex;align-items:flex-end;gap:6px;height:60px" id="revChart">
+            <div style="color:var(--t3);font-size:12px;align-self:center">Press Refresh to load</div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:6px" id="revChartLabels"></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Est. Today's Net</div>
+          <div class="c-val" id="o-net-today">—</div>
+          <div class="c-sub">after COGS + ad spend</div>
+          <div id="o-net-formula" style="margin-top:8px;font-size:11px;color:var(--t3);line-height:1.6"></div>
+        </div>
+      </div>
+
+      <!-- BEST AD -->
+      <div id="bestAdBanner" style="display:none;background:var(--s);border:1px solid var(--b);border-left:3px solid var(--green);border-radius:10px;padding:14px 20px;margin-bottom:20px">
+        <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px">🏆 BEST PERFORMING AD TODAY</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div style="font-size:14px;font-weight:600;color:var(--t)" id="bestAdName">—</div>
+          <div style="display:flex;gap:20px">
+            <div style="text-align:center">
+              <div style="font-size:10px;color:var(--t3);margin-bottom:3px">PURCHASES</div>
+              <div style="font-family:'SF Mono',monospace;font-size:16px;color:var(--green)" id="bestAdPurch">—</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:10px;color:var(--t3);margin-bottom:3px">CPA</div>
+              <div style="font-family:'SF Mono',monospace;font-size:16px;color:var(--gold)" id="bestAdCpa">—</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:10px;color:var(--t3);margin-bottom:3px">SPEND</div>
+              <div style="font-family:'SF Mono',monospace;font-size:16px;color:var(--t2)" id="bestAdSpend">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-hdr">
+        <div class="sec-ttl">URGENT TASKS</div>
+        <div class="sec-tag" style="cursor:pointer" onclick="nav('todo',document.querySelectorAll('.nav')[5])">view all →</div>
+      </div>
+      <div id="urgentTasks" style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px"></div>
+
+      <div class="sec-hdr"><div class="sec-ttl">TOP PRODUCTS — 30 DAYS</div><div class="sec-tag">Shopify</div></div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>#</th><th>Product</th><th>Revenue (EGP)</th><th>Orders</th></tr></thead>
+        <tbody id="ovProds"><tr><td colspan="4" class="empty">Press Refresh to load</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- SHOPIFY -->
+    <div class="page" id="p-shopify">
+      <div class="pg-title">Shopify</div>
+      <div class="pg-sub">glowmodest.com — live store data</div>
+      <div class="sec-err" id="shopify-err"></div>
+      <div class="cards c4">
+        <div class="card"><div class="c-lbl">Revenue Today</div><div class="c-val" id="s-rev-t">—</div><div class="c-sub">EGP gross</div></div>
+        <div class="card"><div class="c-lbl">Revenue MTD</div><div class="c-val" id="s-rev-m">—</div><div class="c-sub">June month-to-date</div></div>
+        <div class="card"><div class="c-lbl">Orders Today</div><div class="c-val" id="s-ord">—</div><div class="c-sub">new orders</div></div>
+        <div class="card"><div class="c-lbl">AOV</div><div class="c-val" id="s-aov">—</div><div class="c-sub">avg order value EGP</div></div>
+      </div>
+      <div class="cards c3">
+        <div class="card"><div class="c-lbl">Return Rate</div><div class="c-val" id="s-ret">—</div><div class="c-sub">June MTD</div></div>
+        <div class="card"><div class="c-lbl">Active Products</div><div class="c-val" id="s-act">—</div><div class="c-sub">live in store</div></div>
+        <div class="card"><div class="c-lbl">Draft Products</div><div class="c-val" id="s-dft">—</div><div class="c-sub">pending activation</div></div>
+      </div>
+      <div class="sec-hdr"><div class="sec-ttl">TOP PRODUCTS — 30 DAYS</div><div class="sec-tag">by revenue</div></div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>#</th><th>Product</th><th>Revenue (EGP)</th><th>Orders</th><th>Net Revenue</th></tr></thead>
+        <tbody id="shProds"><tr><td colspan="5" class="empty">Press Refresh to load</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- META -->
+    <div class="page" id="p-meta">
+      <div class="pg-title">Meta Ads</div>
+      <div class="pg-sub" id="metaSub">Account — Conversion campaigns</div>
+      <div class="sec-err" id="meta-err"></div>
+      <div class="cards c4">
+        <div class="card"><div class="c-lbl">Spend Today</div><div class="c-val" id="m-spend">—</div><div class="c-sub">EGP</div></div>
+        <div class="card"><div class="c-lbl">Purchases</div><div class="c-val" id="m-purch">—</div><div class="c-sub">today</div></div>
+        <div class="card"><div class="c-lbl">CPA</div><div class="c-val" id="m-cpa">—</div><div class="c-sub">EGP / purchase</div></div>
+        <div class="card"><div class="c-lbl">CTR</div><div class="c-val" id="m-ctr">—</div><div class="c-sub">click-through rate</div></div>
+      </div>
+      <div class="cards c3">
+        <div class="card"><div class="c-lbl">Impressions</div><div class="c-val" id="m-imp">—</div><div class="c-sub">today</div></div>
+        <div class="card"><div class="c-lbl">CPM</div><div class="c-val" id="m-cpm">—</div><div class="c-sub">cost per 1K impressions</div></div>
+        <div class="card"><div class="c-lbl">Reach</div><div class="c-val" id="m-reach">—</div><div class="c-sub">unique people</div></div>
+      </div>
+      <div class="sec-hdr"><div class="sec-ttl">ACTIVE CAMPAIGNS</div><div class="sec-tag">today</div></div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>Campaign</th><th>Status</th><th>Spend (EGP)</th><th>Purchases</th><th>CPA</th></tr></thead>
+        <tbody id="metaCamp"><tr><td colspan="5" class="empty">Press Refresh to load</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- FINANCE -->
+    <div class="page" id="p-finance">
+      <div class="pg-title">Finance</div>
+      <div class="pg-sub">CFO Sheet + Cash Master — Google Sheets</div>
+      <div class="sec-err" id="finance-err"></div>
+      <div class="cards c3">
+        <div class="card"><div class="c-lbl">Net Profit (June)</div><div class="c-val" id="f-profit">—</div><div class="c-sub">EGP after all costs</div></div>
+        <div class="card"><div class="c-lbl">Cash Position</div><div class="c-val" id="f-cash">—</div><div class="c-sub">Cash Master balance</div></div>
+        <div class="card"><div class="c-lbl">COD Float</div><div class="c-val" id="f-float">—</div><div class="c-sub">held by carriers</div></div>
+      </div>
+      <div class="cards c3">
+        <div class="card"><div class="c-lbl">Ad Spend (June)</div><div class="c-val" id="f-ads">—</div><div class="c-sub">total month</div></div>
+        <div class="card"><div class="c-lbl">COGS Ratio</div><div class="c-val" id="f-cogs">—</div><div class="c-sub">target: ≤40%</div></div>
+        <div class="card"><div class="c-lbl">Gross Margin</div><div class="c-val" id="f-margin">—</div><div class="c-sub">target: ≥60%</div></div>
+      </div>
+      <div class="briefing" style="margin-top:8px">
+        <div class="briefing-lbl">📊 Finance Summary</div>
+        <div class="briefing-txt" id="finTxt">Press Refresh to load finance data from your Google Sheets.</div>
+      </div>
+    </div>
+
+    <!-- TODAY -->
+    <div class="page" id="p-today">
+      <div class="pg-title">Today</div>
+      <div class="pg-sub" id="todayDate">Your schedule + calendar</div>
+      <div class="briefing">
+        <div class="briefing-lbl">📅 Today's Agenda</div>
+        <div class="briefing-txt" id="calSum">Press Refresh to load your Google Calendar.</div>
+      </div>
+      <div class="sec-hdr"><div class="sec-ttl">SCHEDULE</div><div class="sec-tag">Google Calendar</div></div>
+      <div class="cal-list" id="calList"><div class="empty">No events loaded yet</div></div>
+    </div>
+
+    <!-- TODO -->
+    <div class="page" id="p-todo">
+      <div class="pg-title">To-Do</div>
+      <div class="pg-sub">Your tasks — saved in this browser</div>
+      <div class="todo-row">
+        <input class="todo-inp" id="todoInp" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTodo()">
+        <select class="prio-sel" id="prioSel">
+          <option value="h">🔴 High</option>
+          <option value="m" selected>🟡 Medium</option>
+          <option value="l">🟢 Low</option>
+        </select>
+        <button class="add-btn" onclick="addTodo()">+ Add</button>
+      </div>
+      <div class="filters">
+        <button class="fil on" onclick="setFilter('all',this)">All</button>
+        <button class="fil" onclick="setFilter('active',this)">Active</button>
+        <button class="fil" onclick="setFilter('done',this)">Done</button>
+        <button class="fil" onclick="setFilter('h',this)">🔴 High</button>
+      </div>
+      <div class="todo-list" id="todoList"></div>
+    </div>
+
+    <!-- TEAM -->
+    <div class="page" id="p-team">
+      <div class="pg-title">Team</div>
+      <div class="pg-sub">Status notes — saved in this browser</div>
+      <div class="team-grid" id="teamGrid"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────────────────────
+const TODO_STORE = 'glow_todos';
+const TEAM_STORE = 'glow_team';
+const TEAM = [
+  { id:'amr',   name:'Amr',   role:'Media Buyer · 5% commission', init:'AM' },
+  { id:'sarah', name:'Sarah', role:'Operations Manager',           init:'SA' },
+  { id:'jana',  name:'Jana',  role:'Content Creator',              init:'JA' },
+  { id:'huda',  name:'Huda',  role:'Delivery & Cash Tracking',     init:'HU' },
+];
+let todoFilter = 'all';
+
+// ── NAV ───────────────────────────────────────────────────────────────────
+function nav(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.nav').forEach(n => n.classList.remove('on'));
+  document.getElementById('p-' + id).classList.add('on');
+  if (el) el.classList.add('on');
+}
+
+// ── REFRESH ───────────────────────────────────────────────────────────────
+async function refresh() {
+  const btn = document.getElementById('refBtn');
+  btn.disabled = true;
+  btn.textContent = '↻ Loading...';
+  hideErr();
+
+  try {
+    // ── 1. Fetch all data sources in parallel ──
+    showLoading('Fetching Shopify, Meta Ads & Sheets...');
+
+    const [shopifyResult, metaResult, financeResult] = await Promise.allSettled([
+      fetch('/api/shopify').then(r => r.json()),
+      fetch('/api/meta').then(r => r.json()),
+      fetch('/api/sheets').then(r => r.json()),
+    ]);
+
+    const shopify = shopifyResult.status === 'fulfilled' ? shopifyResult.value : {};
+    const meta    = metaResult.status    === 'fulfilled' ? metaResult.value    : {};
+    const finance = financeResult.status === 'fulfilled' ? financeResult.value : {};
+
+    // Show per-section errors
+    if (shopify.error) showSectionErr('shopify', shopify.error);
+    if (meta.error)    showSectionErr('meta',    meta.error);
+    if (finance.error) showSectionErr('finance', finance.error);
+
+    // ── 2. Get AI briefing + alerts (server-side) ──
+    showLoading('Generating AI briefing...');
+    let briefing = '', fin_summary = '', alerts = [];
+    try {
+      const bRes = await fetch('/api/briefing', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ shopify, meta, finance }),
+      }).then(r => r.json());
+      briefing    = bRes.briefing    || '';
+      fin_summary = bRes.fin_summary || '';
+      alerts      = bRes.alerts      || [];
+    } catch (e) {
+      console.warn('Briefing failed:', e);
+    }
+
+    // ── 3. Fetch calendar separately (non-blocking) ──
+    fetchCalendar();
+
+    // ── 4. Merge and render ──
+    const yesterday = {
+      ...(shopify.yesterday || {}),
+      spend: meta.yesterday?.spend,
+      cpa:   meta.yesterday?.cpa,
+    };
+
+    render({ shopify, meta, finance, briefing, fin_summary, alerts, yesterday,
+      last7days: shopify.last7days || [],
+      best_ad:   meta.best_ad      || null,
+    });
+
+    document.getElementById('upd').textContent =
+      'Updated ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+  } catch (e) {
+    showErr('Refresh failed: ' + e.message);
+    console.error(e);
+  }
+
+  hideLoading();
+  btn.disabled = false;
+  btn.textContent = '↻ Refresh';
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────────────────
+async function fetchCalendar() {
+  try {
+    const d = await fetch('/api/calendar').then(r => r.json());
+    if (d.error) { document.getElementById('calSum').textContent = 'Calendar: ' + d.error; return; }
+
+    document.getElementById('calSum').textContent = d.summary || '';
+    const list = document.getElementById('calList');
+    if (!d.events || !d.events.length) {
+      list.innerHTML = '<div class="empty">No events today</div>';
+      return;
+    }
+    list.innerHTML = d.events.map(e => `
+      <div class="cal-ev">
+        <div class="cal-time">${e.time || '—'}</div>
+        <div>
+          <div class="cal-title">${e.title}</div>
+          ${e.desc ? `<div class="cal-desc">${e.desc}</div>` : ''}
+        </div>
+      </div>`).join('');
+  } catch (e) {
+    document.getElementById('calSum').textContent = 'Could not load calendar.';
+  }
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function delta(val, prev, lowerIsBetter = false) {
+  if (prev === undefined || prev === null || prev === 0) return '';
+  const pct  = ((val - prev) / prev * 100).toFixed(1);
+  const up   = val >= prev;
+  const good = lowerIsBetter ? !up : up;
+  const color = good ? 'var(--green)' : 'var(--red)';
+  const arrow = up ? '↑' : '↓';
+  return `<span style="color:${color}">${arrow} ${Math.abs(pct)}% vs yesterday</span>`;
+}
+
+function fmt(n)    { return Math.round(n || 0).toLocaleString('en-EG'); }
+function fmtPct(n) { return ((n || 0) * 100).toFixed(1) + '%'; }
+
+function render(d) {
+  const s    = d.shopify   || {};
+  const m    = d.meta      || {};
+  const f    = d.finance   || {};
+  const yest = d.yesterday || {};
+
+  // ── Goal bar ──
+  const mtd = s.rev_mtd || 0;
+  const pct = Math.min((mtd / 2_000_000) * 100, 100);
+  document.getElementById('goalCur').textContent = fmt(mtd);
+  document.getElementById('goalBar').style.width = pct + '%';
+  document.getElementById('goalPct').textContent  = pct.toFixed(1) + '% of 2M target';
+
+  // ── Pace banner ──
+  const now        = new Date();
+  const dayOfMonth = now.getDate();
+  const daysLeft   = 30 - dayOfMonth;
+  const dailyAvg   = mtd / dayOfMonth;
+  const projected  = mtd + dailyAvg * daysLeft;
+  const hourOfDay  = now.getHours() + now.getMinutes() / 60;
+  const revToday   = s.rev_today || 0;
+  const hourlyRate = hourOfDay > 0 ? Math.round(revToday / hourOfDay) : 0;
+  const paceGood   = revToday >= (dailyAvg * (hourOfDay / 24)) * 0.85;
+
+  document.getElementById('paceBanner').style.display = 'flex';
+  document.getElementById('paceAmt').textContent      = fmt(Math.round(projected)) + ' EGP';
+  document.getElementById('paceHourly').textContent   = fmt(hourlyRate);
+  document.getElementById('paceStatus').textContent   = paceGood ? '🟢 on pace' : '🔴 behind pace';
+  document.getElementById('paceStatus').style.color   = paceGood ? 'var(--green)' : 'var(--red)';
+
+  // ── ROAS ──
+  const roasVal = m.spend > 0 ? (revToday / m.spend).toFixed(1) : '—';
+  document.getElementById('roas').textContent = roasVal + (m.spend > 0 ? 'x' : '');
+
+  // ── Overview cards ──
+  document.getElementById('o-rev').textContent   = fmt(revToday);
+  document.getElementById('o-rev-d').innerHTML   = delta(revToday, yest.rev_today);
+  document.getElementById('o-ord').textContent   = s.orders_today || 0;
+  document.getElementById('o-ord-d').innerHTML   = delta(s.orders_today, yest.orders_today);
+  document.getElementById('o-spend').textContent = fmt(m.spend);
+  document.getElementById('o-spend-d').innerHTML = delta(m.spend, yest.spend, true);
+  document.getElementById('o-ret').textContent   = fmtPct(s.return_rate);
+  document.getElementById('o-ret-d').innerHTML   = delta(s.return_rate, yest.return_rate, true);
+  document.getElementById('o-cpa').textContent   = fmt(m.cpa);
+  document.getElementById('o-cpa-d').innerHTML   = delta(m.cpa, yest.cpa, true);
+  document.getElementById('o-aov').textContent   = fmt(s.aov);
+  document.getElementById('o-aov-d').innerHTML   = delta(s.aov, yest.aov);
+  document.getElementById('o-cvr').textContent   = s.cvr ? fmtPct(s.cvr) : '—';
+  document.getElementById('o-profit').textContent = fmt(f.profit);
+
+  // ── Briefing & alerts ──
+  if (d.briefing) {
+    document.getElementById('briefingTxt').innerHTML =
+      d.briefing.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  }
+  renderAlerts(d.alerts || []);
+
+  // ── Tables & charts ──
+  renderProds('ovProds', s.top || [], 4);
+  renderUrgentTasks();
+  render7DayChart(d.last7days || []);
+  renderNetToday(revToday, m.spend, f.cogs || 0.38);
+  renderBestAd(d.best_ad || null);
+
+  // ── Shopify page ──
+  document.getElementById('s-rev-t').textContent = fmt(revToday);
+  document.getElementById('s-rev-m').textContent = fmt(s.rev_mtd);
+  document.getElementById('s-ord').textContent   = s.orders_today || 0;
+  document.getElementById('s-aov').textContent   = fmt(s.aov);
+  document.getElementById('s-ret').textContent   = fmtPct(s.return_rate);
+  document.getElementById('s-act').textContent   = s.active  || 0;
+  document.getElementById('s-dft').textContent   = s.drafts  || 0;
+  renderProds('shProds', s.top || [], 5);
+
+  // ── Meta page ──
+  document.getElementById('m-spend').textContent = fmt(m.spend);
+  document.getElementById('m-purch').textContent = m.purchases || 0;
+  document.getElementById('m-cpa').textContent   = fmt(m.cpa);
+  document.getElementById('m-ctr').textContent   = (m.ctr || 0).toFixed(2) + '%';
+  document.getElementById('m-imp').textContent   = fmt(m.impressions);
+  document.getElementById('m-cpm').textContent   = fmt(m.cpm);
+  document.getElementById('m-reach').textContent = fmt(m.reach);
+  renderCampaigns(m.campaigns || []);
+
+  // ── Finance page ──
+  document.getElementById('f-profit').textContent = fmt(f.profit);
+  document.getElementById('f-cash').textContent   = fmt(f.cash);
+  document.getElementById('f-float').textContent  = fmt(f.float);
+  document.getElementById('f-ads').textContent    = fmt(f.adspend);
+  document.getElementById('f-cogs').textContent   = fmtPct(f.cogs);
+  document.getElementById('f-margin').textContent = fmtPct(f.margin);
+  if (d.fin_summary) {
+    document.getElementById('finTxt').innerHTML =
+      d.fin_summary.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  }
+}
+
+function render7DayChart(days) {
+  const chart  = document.getElementById('revChart');
+  const labels = document.getElementById('revChartLabels');
+  if (!days || !days.length) {
+    chart.innerHTML = '<div style="color:var(--t3);font-size:12px;align-self:center">No data</div>';
+    return;
+  }
+  const max      = Math.max(...days.map(d => d.rev), 1);
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  chart.innerHTML = days.map((d, i) => {
+    const h      = Math.max((d.rev / max) * 60, 4);
+    const isToday = i === days.length - 1;
+    const color  = isToday ? 'var(--gold)' : 'var(--b2)';
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div style="font-size:9px;color:${isToday ? 'var(--gold)' : 'var(--t3)'};font-family:'SF Mono',monospace">
+        ${d.rev > 0 ? Math.round(d.rev / 1000) + 'K' : ''}
+      </div>
+      <div style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0;transition:height .5s ease"></div>
+    </div>`;
+  }).join('');
+  labels.innerHTML = days.map((d, i) => {
+    const isToday = i === days.length - 1;
+    const date    = new Date(d.date);
+    return `<div style="flex:1;text-align:center;font-size:9px;color:${isToday ? 'var(--gold)' : 'var(--t3)'};font-family:'SF Mono',monospace">
+      ${isToday ? 'Today' : dayNames[date.getDay()]}
+    </div>`;
+  }).join('');
+}
+
+function renderNetToday(rev, adSpend, cogsRatio) {
+  const cogs      = rev * cogsRatio;
+  const net       = rev - cogs - (adSpend || 0);
+  const netMargin = rev > 0 ? ((net / rev) * 100).toFixed(1) : 0;
+  const el        = document.getElementById('o-net-today');
+  const formula   = document.getElementById('o-net-formula');
+  el.textContent  = fmt(Math.round(net));
+  el.style.color  = net > 0 ? 'var(--green)' : 'var(--red)';
+  formula.innerHTML = `${fmt(Math.round(rev))} rev<br>
+    − ${fmt(Math.round(cogs))} COGS (${Math.round(cogsRatio * 100)}%)<br>
+    − ${fmt(Math.round(adSpend || 0))} ads<br>
+    <span style="color:${net > 0 ? 'var(--green)' : 'var(--red)'}">= ${netMargin}% net margin</span>`;
+}
+
+function renderBestAd(ad) {
+  const banner = document.getElementById('bestAdBanner');
+  if (!ad) { banner.style.display = 'none'; return; }
+  banner.style.display = 'block';
+  document.getElementById('bestAdName').textContent  = ad.name;
+  document.getElementById('bestAdPurch').textContent = ad.purchases;
+  document.getElementById('bestAdCpa').textContent   = fmt(ad.cpa) + ' EGP';
+  document.getElementById('bestAdSpend').textContent = fmt(ad.spend) + ' EGP';
+}
+
+function renderUrgentTasks() {
+  const todos = getTodos().filter(t => t.p === 'h' && !t.done).slice(0, 3);
+  const el    = document.getElementById('urgentTasks');
+  if (!todos.length) {
+    el.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:10px 0">No urgent tasks — you\'re clear 🟢</div>';
+    return;
+  }
+  el.innerHTML = todos.map(t => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--s);border:1px solid rgba(248,113,113,.2);border-radius:8px">
+      <span style="color:var(--red);font-size:13px">🔴</span>
+      <span style="font-size:13px;color:var(--t);flex:1">${t.text}</span>
+      <span onclick="toggleTodo(${t.id});renderUrgentTasks()" style="cursor:pointer;color:var(--t3);font-size:12px;padding:3px 8px;border:1px solid var(--b2);border-radius:4px">Done</span>
+    </div>`).join('');
+}
+
+function renderProds(id, prods, cols) {
+  const b = document.getElementById(id);
+  if (!prods.length) {
+    b.innerHTML = `<tr><td colspan="${cols}" class="empty">No data</td></tr>`;
+    return;
+  }
+  b.innerHTML = prods.slice(0, 10).map((p, i) => `<tr>
+    <td class="mono" style="color:var(--t3)">${String(i + 1).padStart(2, '0')}</td>
+    <td>${p.name}</td>
+    <td class="mono gold">${fmt(p.rev)}</td>
+    <td class="mono">${p.orders || 0}</td>
+    ${cols === 5 ? `<td class="mono">${fmt(p.net)}</td>` : ''}
+  </tr>`).join('');
+}
+
+function renderCampaigns(camps) {
+  const b = document.getElementById('metaCamp');
+  if (!camps.length) { b.innerHTML = '<tr><td colspan="5" class="empty">No active campaigns</td></tr>'; return; }
+  b.innerHTML = camps.map(c => `<tr>
+    <td>${c.name}</td>
+    <td><span style="background:rgba(74,222,128,.1);color:var(--green);padding:2px 8px;border-radius:4px;font-size:11px">${c.status || 'ACTIVE'}</span></td>
+    <td class="mono gold">${fmt(c.spend)}</td>
+    <td class="mono">${c.purchases || 0}</td>
+    <td class="mono">${fmt(c.cpa)}</td>
+  </tr>`).join('');
+}
+
+function renderAlerts(alerts) {
+  const el = document.getElementById('alertsEl');
+  if (!alerts.length) { el.innerHTML = ''; return; }
+  el.innerHTML = alerts.map(a => `
+    <div class="alert a-${a.type}">
+      <span>${a.type === 'red' ? '🔴' : a.type === 'yellow' ? '🟡' : '🟢'}</span>
+      <span>${(a.msg || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</span>
+    </div>`).join('');
+}
+
+// ── ERROR HELPERS ─────────────────────────────────────────────────────────
+function showErr(msg) {
+  const e = document.getElementById('errBanner');
+  e.textContent  = msg;
+  e.style.display = 'block';
+}
+function hideErr() { document.getElementById('errBanner').style.display = 'none'; }
+
+function showSectionErr(section, msg) {
+  const el = document.getElementById(section + '-err');
+  if (el) { el.textContent = '⚠ ' + msg; el.style.display = 'block'; }
+}
+
+// ── LOADING ───────────────────────────────────────────────────────────────
+function showLoading(t) {
+  document.getElementById('loadingBg').classList.add('on');
+  document.getElementById('loadingTxt').textContent = t || 'Loading...';
+}
+function hideLoading() { document.getElementById('loadingBg').classList.remove('on'); }
+
+// ── TODO ──────────────────────────────────────────────────────────────────
+function getTodos() {
+  try { return JSON.parse(localStorage.getItem(TODO_STORE)) || defaultTodos(); }
+  catch { return defaultTodos(); }
+}
+function saveTodos(t) { localStorage.setItem(TODO_STORE, JSON.stringify(t)); updateTodoBadge(t); }
+function defaultTodos() {
+  return [
+    { id:1, text:'Activate 20 draft Summer 2026 color products', done:false, p:'h' },
+    { id:2, text:'Fix CFO Sheet Tab 1 (CEO Dashboard)',           done:false, p:'h' },
+    { id:3, text:'Open Glow business bank account',               done:false, p:'m' },
+    { id:4, text:'Buy NAC 1200mg supplement',                     done:false, p:'l' },
+    { id:5, text:'Decision on Two Way carrier (53.7% delivery rate)', done:false, p:'h' },
+  ];
+}
+function updateTodoBadge(todos) {
+  const n = (todos || getTodos()).filter(t => !t.done).length;
+  const b = document.getElementById('todoBadge');
+  b.style.display = n ? 'inline' : 'none';
+  b.textContent   = n;
+}
+function addTodo() {
+  const inp = document.getElementById('todoInp');
+  const txt = inp.value.trim(); if (!txt) return;
+  const p   = document.getElementById('prioSel').value;
+  const todos = getTodos();
+  todos.unshift({ id: Date.now(), text: txt, done: false, p });
+  saveTodos(todos); inp.value = ''; renderTodos();
+}
+function toggleTodo(id) {
+  const t = getTodos(); const item = t.find(x => x.id === id);
+  if (item) item.done = !item.done;
+  saveTodos(t); renderTodos();
+}
+function delTodo(id) { saveTodos(getTodos().filter(t => t.id !== id)); renderTodos(); }
+function cyclePrio(id) {
+  const t = getTodos(); const item = t.find(x => x.id === id);
+  if (item) item.p = { h:'m', m:'l', l:'h' }[item.p] || 'm';
+  saveTodos(t); renderTodos();
+}
+function setFilter(f, el) {
+  todoFilter = f;
+  document.querySelectorAll('.fil').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  renderTodos();
+}
+function renderTodos() {
+  let t = getTodos();
+  if (todoFilter === 'active') t = t.filter(x => !x.done);
+  else if (todoFilter === 'done')   t = t.filter(x => x.done);
+  else if (todoFilter === 'h')      t = t.filter(x => x.p === 'h' && !x.done);
+  const list = document.getElementById('todoList');
+  if (!t.length) { list.innerHTML = '<div class="empty">No tasks here</div>'; return; }
+  const pLabel = { h:'🔴 HIGH', m:'🟡 MED', l:'🟢 LOW' };
+  const pClass = { h:'p-h',    m:'p-m',    l:'p-l' };
+  list.innerHTML = t.map(x => `
+    <div class="ti ${x.done ? 'done' : ''}">
+      <div class="chk ${x.done ? 'on' : ''}" onclick="toggleTodo(${x.id})"></div>
+      <div class="ti-txt" onclick="toggleTodo(${x.id})">${x.text}</div>
+      <button class="prio-tag ${pClass[x.p]}" onclick="cyclePrio(${x.id})">${pLabel[x.p]}</button>
+      <button class="del-btn" onclick="delTodo(${x.id})">✕</button>
+    </div>`).join('');
+}
+
+// ── TEAM ──────────────────────────────────────────────────────────────────
+function getTeamNotes() { try { return JSON.parse(localStorage.getItem(TEAM_STORE)) || {}; } catch { return {}; } }
+function saveNote(id, v) { const n = getTeamNotes(); n[id] = v; localStorage.setItem(TEAM_STORE, JSON.stringify(n)); }
+function renderTeam() {
+  const notes = getTeamNotes();
+  document.getElementById('teamGrid').innerHTML = TEAM.map(m => `
+    <div class="tc">
+      <div class="tc-hdr">
+        <div class="av">${m.init}</div>
+        <div><div class="tc-name">${m.name}</div><div class="tc-role">${m.role}</div></div>
+      </div>
+      <textarea class="tc-notes" placeholder="Notes on ${m.name}..."
+        onchange="saveNote('${m.id}',this.value)">${notes[m.id] || ''}</textarea>
+    </div>`).join('');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+(function init() {
+  const now = new Date();
+  const h   = now.getHours();
+  const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greeting').textContent = `${greet}, Omar ☀️`;
+  const ds = now.toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  document.getElementById('dateStr').textContent  = ds;
+  document.getElementById('todayDate').textContent = ds;
+
+  renderTodos();
+  renderTeam();
+  updateTodoBadge();
+  renderUrgentTasks();
+})();
+</script>
+</body>
+</html>
