@@ -92,6 +92,12 @@ tr:hover td{background:var(--s2);color:var(--t)}
 td:first-child{color:var(--t);font-weight:500}
 .mono{font-family:'SF Mono',monospace}
 .gold{color:var(--gold)}
+.show-all-btn{background:var(--b2);border:1px solid var(--b);color:var(--t2);border-radius:5px;padding:3px 10px;font-size:10px;font-weight:600;letter-spacing:.06em;cursor:pointer;transition:all .15s}
+.show-all-btn:hover{background:var(--b);color:var(--t)}
+.show-all-btn.active{background:rgba(201,169,110,.12);border-color:rgba(201,169,110,.3);color:var(--gold)}
+.edit-row-btn{background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:4px;transition:all .15s;opacity:0}
+tr:hover .edit-row-btn{opacity:1}
+.edit-row-btn:hover{color:var(--gold);background:rgba(201,169,110,.1)}
 
 /* TODO */
 .todo-row{display:flex;gap:8px;margin-bottom:14px}
@@ -483,9 +489,12 @@ td:first-child{color:var(--t);font-weight:500}
           </div>
         </div>
         <div class="fin-hist-wrap">
-          <div class="fin-hist-hdr">Recent Entries</div>
-          <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Revenue</th><th>Orders</th><th>Sessions</th><th>CVR%</th><th>Meta Spend</th><th>AOV</th><th>CPA</th><th>ROAS</th><th>Notes</th></tr></thead>
-          <tbody id="di-hist"><tr><td colspan="10" class="empty">No entries yet</td></tr></tbody></table></div>
+          <div class="fin-hist-hdr" style="display:flex;align-items:center;justify-content:space-between">
+            <span>Recent Entries</span>
+            <button class="show-all-btn" id="di-show-all-btn" onclick="toggleDiAll()">Show All</button>
+          </div>
+          <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Revenue</th><th>Orders</th><th>Sessions</th><th>CVR%</th><th>Meta Spend</th><th>AOV</th><th>CPA</th><th>ROAS</th><th>Notes</th><th></th></tr></thead>
+          <tbody id="di-hist"><tr><td colspan="11" class="empty">No entries yet</td></tr></tbody></table></div>
         </div>
       </div>
 
@@ -515,9 +524,12 @@ td:first-child{color:var(--t);font-weight:500}
           </div>
         </div>
         <div class="fin-hist-wrap">
-          <div class="fin-hist-hdr">Cash Log History</div>
-          <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Company</th><th>Cash Received</th><th>7% Savings</th><th>To Safe</th><th>Notes</th></tr></thead>
-          <tbody id="cl-hist"><tr><td colspan="6" class="empty">No entries yet</td></tr></tbody></table></div>
+          <div class="fin-hist-hdr" style="display:flex;align-items:center;justify-content:space-between">
+            <span>Cash Log History</span>
+            <button class="show-all-btn" id="cl-show-all-btn" onclick="toggleClAll()">Show All</button>
+          </div>
+          <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Company</th><th>Cash Received</th><th>7% Savings</th><th>To Safe</th><th>Notes</th><th></th></tr></thead>
+          <tbody id="cl-hist"><tr><td colspan="7" class="empty">No entries yet</td></tr></tbody></table></div>
         </div>
       </div>
 
@@ -553,9 +565,12 @@ td:first-child{color:var(--t);font-weight:500}
           </div>
         </div>
         <div class="fin-hist-wrap">
-          <div class="fin-hist-hdr">Payment History</div>
-          <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Supplier</th><th>Amount (EGP)</th><th>Notes</th></tr></thead>
-          <tbody id="sp-hist"><tr><td colspan="4" class="empty">No entries yet</td></tr></tbody></table></div>
+          <div class="fin-hist-hdr" style="display:flex;align-items:center;justify-content:space-between">
+            <span>Payment History</span>
+            <button class="show-all-btn" id="sp-show-all-btn" onclick="toggleSpAll()">Show All</button>
+          </div>
+          <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Supplier</th><th>Amount (EGP)</th><th>Notes</th><th></th></tr></thead>
+          <tbody id="sp-hist"><tr><td colspan="5" class="empty">No entries yet</td></tr></tbody></table></div>
         </div>
       </div>
 
@@ -583,9 +598,12 @@ td:first-child{color:var(--t);font-weight:500}
           </div>
         </div>
         <div class="fin-hist-wrap">
-          <div class="fin-hist-hdr">Journal History</div>
-          <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Safe</th><th>Bank</th><th>Total</th><th>Expense</th><th>Amount</th><th>Ads</th><th>Notes</th></tr></thead>
-          <tbody id="dj-hist"><tr><td colspan="8" class="empty">No entries yet</td></tr></tbody></table></div>
+          <div class="fin-hist-hdr" style="display:flex;align-items:center;justify-content:space-between">
+            <span>Journal History</span>
+            <button class="show-all-btn" id="dj-show-all-btn" onclick="toggleDjAll()">Show All</button>
+          </div>
+          <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Safe</th><th>Bank</th><th>Total</th><th>Expense</th><th>Amount</th><th>Ads</th><th>Notes</th><th></th></tr></thead>
+          <tbody id="dj-hist"><tr><td colspan="9" class="empty">No entries yet</td></tr></tbody></table></div>
         </div>
       </div>
 
@@ -1340,6 +1358,7 @@ async function saveDailyEntry() {
     loadFinOverview();
   } catch(e) { alert('Error: ' + e.message); }
   btn.disabled = false; btn.textContent = 'Save Entry';
+  btn.style.removeProperty('background');
 }
 
 async function saveCashLog() {
@@ -1425,17 +1444,90 @@ async function savePL() {
   } catch(e) { alert('Error: ' + e.message); }
 }
 
+// ── HISTORY STATE (limits) ──
+const _histLimit = { di: 30, cl: 30, sp: 30, dj: 30 };
+
+function toggleDiAll() {
+  _histLimit.di = _histLimit.di === 30 ? 1000 : 30;
+  const btn = document.getElementById('di-show-all-btn');
+  btn.textContent = _histLimit.di === 1000 ? 'Show Less' : 'Show All';
+  btn.classList.toggle('active', _histLimit.di === 1000);
+  loadDailyHist();
+}
+function toggleClAll() {
+  _histLimit.cl = _histLimit.cl === 30 ? 1000 : 30;
+  const btn = document.getElementById('cl-show-all-btn');
+  btn.textContent = _histLimit.cl === 1000 ? 'Show Less' : 'Show All';
+  btn.classList.toggle('active', _histLimit.cl === 1000);
+  loadCashHist();
+}
+function toggleSpAll() {
+  _histLimit.sp = _histLimit.sp === 30 ? 1000 : 30;
+  const btn = document.getElementById('sp-show-all-btn');
+  btn.textContent = _histLimit.sp === 1000 ? 'Show Less' : 'Show All';
+  btn.classList.toggle('active', _histLimit.sp === 1000);
+  loadSupplierHist();
+}
+function toggleDjAll() {
+  _histLimit.dj = _histLimit.dj === 30 ? 1000 : 30;
+  const btn = document.getElementById('dj-show-all-btn');
+  btn.textContent = _histLimit.dj === 1000 ? 'Show Less' : 'Show All';
+  btn.classList.toggle('active', _histLimit.dj === 1000);
+  loadJournalHist();
+}
+
+// ── EDIT ROW → FILL FORM ──
+function editDailyEntry(r) {
+  document.getElementById('di-date').value      = r.date;
+  document.getElementById('di-sales').value     = r.net_sales;
+  document.getElementById('di-orders').value    = r.orders;
+  document.getElementById('di-sessions').value  = r.sessions || '';
+  document.getElementById('di-spend').value     = r.meta_spend;
+  document.getElementById('di-purchases').value = r.meta_purchases;
+  document.getElementById('di-notes').value     = r.notes || '';
+  diCalc();
+  document.querySelector('#fp-daily .fin-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('di-btn').textContent = 'Update Entry';
+}
+function editCashEntry(r) {
+  document.getElementById('cl-date').value    = r.date;
+  document.getElementById('cl-company').value = r.delivery_company;
+  document.getElementById('cl-amount').value  = r.cash_received;
+  document.getElementById('cl-notes').value   = r.notes || '';
+  clCalc();
+  document.querySelector('#fp-cash .fin-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function editSupplierEntry(r) {
+  document.getElementById('sp-date').value     = r.date;
+  document.getElementById('sp-supplier').value = r.paid_to;
+  document.getElementById('sp-amount').value   = r.amount;
+  document.getElementById('sp-notes').value    = r.notes || '';
+  document.querySelector('#fp-suppliers .fin-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function editJournalEntry(r) {
+  document.getElementById('dj-date').value    = r.date;
+  document.getElementById('dj-safe').value    = r.safe_balance || '';
+  document.getElementById('dj-bank').value    = r.bank_balance || '';
+  document.getElementById('dj-expdesc').value = r.expense_description || '';
+  document.getElementById('dj-expamt').value  = r.expense_amount || '';
+  document.getElementById('dj-ads').value     = r.ads_paid || '';
+  document.getElementById('dj-notes').value   = r.notes || '';
+  djCalc();
+  document.querySelector('#fp-journal .fin-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 // ── LOAD / RENDER HISTORY ──
 async function loadDailyHist() {
   try {
-    const rows = await sbFetch('daily_entries', { order: 'date.desc', limit: 20 });
+    const rows = await sbFetch('daily_entries', { order: 'date.desc', limit: _histLimit.di });
     const tb = document.getElementById('di-hist');
-    if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" class="empty">No entries yet</td></tr>'; return; }
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="11" class="empty">No entries yet</td></tr>'; return; }
     tb.innerHTML = rows.map(r => {
       const aov  = r.orders > 0 ? fmt(Math.round(r.net_sales / r.orders)) : '—';
       const cpa  = r.meta_purchases > 0 ? fmt(Math.round(r.meta_spend / r.meta_purchases)) : '—';
       const roas = r.meta_spend > 0 ? (r.net_sales / r.meta_spend).toFixed(2) + '×' : '—';
       const cvr  = r.sessions > 0 ? ((r.orders / r.sessions) * 100).toFixed(1) + '%' : '—';
+      const rd   = encodeURIComponent(JSON.stringify(r));
       return `<tr>
         <td>${r.date}</td>
         <td class="mono gold">${fmt(r.net_sales)}</td>
@@ -1447,6 +1539,7 @@ async function loadDailyHist() {
         <td class="mono" style="color:${r.meta_purchases > 0 && r.meta_spend / r.meta_purchases > 255 ? 'var(--red)' : 'inherit'}">${cpa}</td>
         <td class="mono" style="color:${r.meta_spend > 0 && r.net_sales / r.meta_spend >= 3 ? 'var(--green)' : 'var(--yellow)'}">${roas}</td>
         <td style="color:var(--t3)">${r.notes || ''}</td>
+        <td><button class="edit-row-btn" onclick="editDailyEntry(JSON.parse(decodeURIComponent('${rd}')))">✏️</button></td>
       </tr>`;
     }).join('');
   } catch(e) { console.error(e); }
@@ -1454,49 +1547,61 @@ async function loadDailyHist() {
 
 async function loadCashHist() {
   try {
-    const rows = await sbFetch('cash_log', { order: 'date.desc', limit: 20 });
+    const rows = await sbFetch('cash_log', { order: 'date.desc', limit: _histLimit.cl });
     const tb = document.getElementById('cl-hist');
-    if (!rows.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">No entries yet</td></tr>'; return; }
-    tb.innerHTML = rows.map(r => `<tr>
-      <td>${r.date}</td>
-      <td>${r.delivery_company}</td>
-      <td class="mono gold">${fmt(r.cash_received)}</td>
-      <td class="mono" style="color:var(--green)">${fmt(Math.round(r.cash_received * 0.07))}</td>
-      <td class="mono">${fmt(Math.round(r.cash_received * 0.93))}</td>
-      <td style="color:var(--t3)">${r.notes || ''}</td>
-    </tr>`).join('');
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">No entries yet</td></tr>'; return; }
+    tb.innerHTML = rows.map(r => {
+      const rd = encodeURIComponent(JSON.stringify(r));
+      return `<tr>
+        <td>${r.date}</td>
+        <td>${r.delivery_company}</td>
+        <td class="mono gold">${fmt(r.cash_received)}</td>
+        <td class="mono" style="color:var(--green)">${fmt(Math.round(r.cash_received * 0.07))}</td>
+        <td class="mono">${fmt(Math.round(r.cash_received * 0.93))}</td>
+        <td style="color:var(--t3)">${r.notes || ''}</td>
+        <td><button class="edit-row-btn" onclick="editCashEntry(JSON.parse(decodeURIComponent('${rd}')))">✏️</button></td>
+      </tr>`;
+    }).join('');
   } catch(e) { console.error(e); }
 }
 
 async function loadSupplierHist() {
   try {
-    const rows = await sbFetch('supplier_payments', { order: 'date.desc', limit: 20 });
+    const rows = await sbFetch('supplier_payments', { order: 'date.desc', limit: _histLimit.sp });
     const tb = document.getElementById('sp-hist');
-    if (!rows.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">No entries yet</td></tr>'; return; }
-    tb.innerHTML = rows.map(r => `<tr>
-      <td>${r.date}</td>
-      <td>${r.paid_to}</td>
-      <td class="mono gold">${fmt(r.amount)}</td>
-      <td style="color:var(--t3)">${r.notes || ''}</td>
-    </tr>`).join('');
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">No entries yet</td></tr>'; return; }
+    tb.innerHTML = rows.map(r => {
+      const rd = encodeURIComponent(JSON.stringify(r));
+      return `<tr>
+        <td>${r.date}</td>
+        <td>${r.paid_to}</td>
+        <td class="mono gold">${fmt(r.amount)}</td>
+        <td style="color:var(--t3)">${r.notes || ''}</td>
+        <td><button class="edit-row-btn" onclick="editSupplierEntry(JSON.parse(decodeURIComponent('${rd}')))">✏️</button></td>
+      </tr>`;
+    }).join('');
   } catch(e) { console.error(e); }
 }
 
 async function loadJournalHist() {
   try {
-    const rows = await sbFetch('daily_journal', { order: 'date.desc', limit: 20 });
+    const rows = await sbFetch('daily_journal', { order: 'date.desc', limit: _histLimit.dj });
     const tb = document.getElementById('dj-hist');
-    if (!rows.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">No entries yet</td></tr>'; return; }
-    tb.innerHTML = rows.map(r => `<tr>
-      <td>${r.date}</td>
-      <td class="mono">${fmt(r.safe_balance)}</td>
-      <td class="mono">${fmt(r.bank_balance)}</td>
-      <td class="mono gold">${fmt(r.safe_balance + r.bank_balance)}</td>
-      <td style="color:var(--t2)">${r.expense_description || '—'}</td>
-      <td class="mono" style="color:${r.expense_amount > 0 ? 'var(--red)' : 'inherit'}">${r.expense_amount > 0 ? fmt(r.expense_amount) : '—'}</td>
-      <td class="mono">${r.ads_paid > 0 ? fmt(r.ads_paid) : '—'}</td>
-      <td style="color:var(--t3)">${r.notes || ''}</td>
-    </tr>`).join('');
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" class="empty">No entries yet</td></tr>'; return; }
+    tb.innerHTML = rows.map(r => {
+      const rd = encodeURIComponent(JSON.stringify(r));
+      return `<tr>
+        <td>${r.date}</td>
+        <td class="mono">${r.safe_balance ? fmt(r.safe_balance) : '—'}</td>
+        <td class="mono">${r.bank_balance ? fmt(r.bank_balance) : '—'}</td>
+        <td class="mono gold">${(r.safe_balance || 0) + (r.bank_balance || 0) > 0 ? fmt((r.safe_balance || 0) + (r.bank_balance || 0)) : '—'}</td>
+        <td style="color:var(--t2)">${r.expense_description || '—'}</td>
+        <td class="mono" style="color:${r.expense_amount > 0 ? 'var(--red)' : 'inherit'}">${r.expense_amount > 0 ? fmt(r.expense_amount) : '—'}</td>
+        <td class="mono">${r.ads_paid > 0 ? fmt(r.ads_paid) : '—'}</td>
+        <td style="color:var(--t3)">${r.notes || ''}</td>
+        <td><button class="edit-row-btn" onclick="editJournalEntry(JSON.parse(decodeURIComponent('${rd}')))">✏️</button></td>
+      </tr>`;
+    }).join('');
   } catch(e) { console.error(e); }
 }
 
