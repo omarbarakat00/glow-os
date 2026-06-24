@@ -166,8 +166,8 @@ module.exports = async function handler(req, res) {
     try {
       const gql = await shopifyGQL(`{
         shopifyqlQuery(query: "FROM sessions SHOW sessions SINCE today UNTIL today") {
-          tableData { rows }
-          parseErrors { code message }
+          tableData { rows columns { name dataType } }
+          parseErrors
         }
       }`);
       // Surface any GraphQL-level errors (e.g. ACCESS_DENIED for missing read_analytics scope)
@@ -176,7 +176,7 @@ module.exports = async function handler(req, res) {
       } else {
         const parseErrs = gql?.data?.shopifyqlQuery?.parseErrors || [];
         if (parseErrs.length > 0) {
-          sessionsDebug = 'ShopifyQL: ' + parseErrs[0].message;
+          sessionsDebug = 'ShopifyQL: ' + JSON.stringify(parseErrs[0]);
         } else {
           const rows = gql?.data?.shopifyqlQuery?.tableData?.rows || [];
           if (rows.length > 0) sessionsToday = parseInt(rows[0].sessions) || 0;
