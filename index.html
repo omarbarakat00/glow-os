@@ -449,10 +449,11 @@ tr:hover .edit-row-btn{opacity:1}
           <div class="card"><div class="c-lbl">Meta Spend (MTD)</div><div class="c-val" id="fov-spend">—</div><div class="c-sub">EGP</div></div>
           <div class="card"><div class="c-lbl">ROAS (MTD)</div><div class="c-val" id="fov-roas">—</div><div class="c-sub">target: ≥3×</div></div>
         </div>
-        <div class="cards c3">
+        <div class="cards c4">
           <div class="card"><div class="c-lbl">CPA (MTD)</div><div class="c-val" id="fov-cpa">—</div><div class="c-sub">ceiling: 255 EGP</div></div>
           <div class="card"><div class="c-lbl">Break-even Orders</div><div class="c-val">333</div><div class="c-sub" id="fov-be">orders/month needed</div></div>
-          <div class="card"><div class="c-lbl">Total Expenses (MTD)</div><div class="c-val" id="fov-exp">—</div><div class="c-sub">from journal</div></div>
+          <div class="card"><div class="c-lbl">Operating Expenses (MTD)</div><div class="c-val" id="fov-exp">—</div><div class="c-sub" id="fov-exp-sub">from journal</div></div>
+          <div class="card"><div class="c-lbl">Ads Paid (MTD)</div><div class="c-val" id="fov-ads">—</div><div class="c-sub" id="fov-ads-sub">from journal</div></div>
         </div>
         <div class="cards c2" style="margin-top:12px">
           <div class="card">
@@ -1755,8 +1756,9 @@ async function loadFinOverview() {
     const mtdCash    = cash.reduce((s, r) => s + (r.cash_received || 0), 0);
     const mtdSavings = Math.round(mtdCash * 0.07);
 
-    // MTD expenses from journal
+    // MTD expenses — split operating vs ads
     const mtdExpenses = journalMTD.reduce((s, r) => s + (r.expense_amount || 0), 0);
+    const mtdAdsPaid  = journalMTD.reduce((s, r) => s + (r.ads_paid       || 0), 0);
 
     // Cash received & supplier COGS (MTD)
     const totalCashReceived  = cash.reduce((s, r)      => s + (r.cash_received || 0), 0);
@@ -1785,8 +1787,11 @@ async function loadFinOverview() {
     cpaEl.textContent = cpa > 0 ? fmt(cpa) : '—';
     cpaEl.style.color = cpa > 255 ? 'var(--red)' : cpa > 0 ? 'var(--green)' : 'var(--t)';
 
-    document.getElementById('fov-exp').textContent = fmt(mtdExpenses);
-    document.getElementById('fov-be').textContent  = `${mtdOrders} / 333 — ${monthName}`;
+    document.getElementById('fov-exp').textContent     = fmt(mtdExpenses);
+    document.getElementById('fov-exp-sub').textContent = monthName;
+    document.getElementById('fov-ads').textContent     = fmt(mtdAdsPaid);
+    document.getElementById('fov-ads-sub').textContent = monthName;
+    document.getElementById('fov-be').textContent      = `${mtdOrders} / 333 — ${monthName}`;
 
     document.getElementById('fov-cash-received').textContent     = fmt(totalCashReceived) + ' EGP';
     document.getElementById('fov-cash-received-sub').textContent = `${cash.length} deliveries — ${monthName}`;
