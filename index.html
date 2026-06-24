@@ -452,7 +452,19 @@ tr:hover .edit-row-btn{opacity:1}
         <div class="cards c3">
           <div class="card"><div class="c-lbl">CPA (MTD)</div><div class="c-val" id="fov-cpa">—</div><div class="c-sub">ceiling: 255 EGP</div></div>
           <div class="card"><div class="c-lbl">Break-even Orders</div><div class="c-val">333</div><div class="c-sub" id="fov-be">orders/month needed</div></div>
-          <div class="card"><div class="c-lbl">Total Expenses (Week)</div><div class="c-val" id="fov-exp">—</div><div class="c-sub">from journal</div></div>
+          <div class="card"><div class="c-lbl">Total Expenses (MTD)</div><div class="c-val" id="fov-exp">—</div><div class="c-sub">from journal</div></div>
+        </div>
+        <div class="cards c2" style="margin-top:12px">
+          <div class="card">
+            <div class="c-lbl">Cash Received (MTD)</div>
+            <div class="c-val" id="fov-cash-received">—</div>
+            <div class="c-sub" id="fov-cash-received-sub">from delivery companies</div>
+          </div>
+          <div class="card">
+            <div class="c-lbl">Supplier COGS (MTD)</div>
+            <div class="c-val" id="fov-supplier-cogs">—</div>
+            <div class="c-sub" id="fov-supplier-cogs-sub">total paid to suppliers</div>
+          </div>
         </div>
         <div style="margin-top:16px;background:var(--s);border:1px solid var(--b);border-radius:10px;padding:16px 18px">
           <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:12px">LAST 7 ENTRIES</div>
@@ -1713,56 +1725,73 @@ async function loadPL() {
 
 async function loadFinOverview() {
   try {
-    // This month's daily entries
-    const now = new Date();
+    const now        = new Date();
     const monthStart = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-    const [daily, journal, cash] = await Promise.all([
-      sbFetch('daily_entries', { order: 'date.desc', limit: 50, filters: [`date=gte.${monthStart}`] }),
-      sbFetch('daily_journal', { order: 'date.desc', limit: 7 }),
-      sbFetch('cash_log', { order: 'date.desc', limit: 100, filters: [`date=gte.${monthStart}`] })
+    const monthName  = now.toLocaleString('en-EG', { month: 'long', year: 'numeric' }); // e.g. "June 2026"
+
+    const [daily, journalLatest, journalMTD, cash, suppliers] = await Promise.all([
+      sbFetch('daily_entries',    { order: 'date.desc', limit: 31,  filters: [`date=gte.${monthStart}`] }),
+      sbFetch('daily_journal',    { order: 'date.desc', limit: 1 }),                                        // for cash position
+      sbFetch('daily_journal',    { order: 'date.desc', limit: 31,  filters: [`date=gte.${monthStart}`] }), // for MTD expenses
+      sbFetch('cash_log',         { order: 'date.desc', limit: 200, filters: [`date=gte.${monthStart}`] }),
+      sbFetch('supplier_payments',{ order: 'date.desc', limit: 200, filters: [`date=gte.${monthStart}`] })
     ]);
 
-    // MTD calcs
-    const mtdRev    = daily.reduce((s, r) => s + (r.net_sales || 0), 0);
-    const mtdOrders = daily.reduce((s, r) => s + (r.orders || 0), 0);
-    const mtdSpend  = daily.reduce((s, r) => s + (r.meta_spend || 0), 0);
+    // MTD revenue / orders / spend
+    const mtdRev    = daily.reduce((s, r) => s + (r.net_sales    || 0), 0);
+    const mtdOrders = daily.reduce((s, r) => s + (r.orders       || 0), 0);
+    const mtdSpend  = daily.reduce((s, r) => s + (r.meta_spend   || 0), 0);
     const aov       = mtdOrders > 0 ? Math.round(mtdRev / mtdOrders) : 0;
-    const roas      = mtdSpend > 0 ? (mtdRev / mtdSpend).toFixed(2) : 0;
+    const roas      = mtdSpend  > 0 ? (mtdRev / mtdSpend).toFixed(2)  : 0;
     const cpa       = mtdOrders > 0 ? Math.round(mtdSpend / mtdOrders) : 0;
 
-    // Cash from journal
-    const latestJournal = journal[0];
-    const safe  = latestJournal?.safe_balance  || 0;
-    const bank  = latestJournal?.bank_balance  || 0;
+    // Cash position from latest journal entry
+    const latestJ = journalLatest[0];
+    const safe  = latestJ?.safe_balance  || 0;
+    const bank  = latestJ?.bank_balance  || 0;
     const total = safe + bank;
 
-    // Savings (7% of all cash receipts this month)
-    const mtdCash   = cash.reduce((s, r) => s + (r.cash_received || 0), 0);
+    // Savings = 7% of all cash received this month
+    const mtdCash    = cash.reduce((s, r) => s + (r.cash_received || 0), 0);
     const mtdSavings = Math.round(mtdCash * 0.07);
 
-    // Weekly expenses
-    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
-    const wkExpenses = journal.reduce((s, r) => s + (r.expense_amount || 0), 0);
+    // MTD expenses from journal
+    const mtdExpenses = journalMTD.reduce((s, r) => s + (r.expense_amount || 0), 0);
 
-    // Update DOM
+    // Cash received & supplier COGS (MTD)
+    const totalCashReceived  = cash.reduce((s, r)      => s + (r.cash_received || 0), 0);
+    const totalSupplierCOGS  = suppliers.reduce((s, r) => s + (r.amount       || 0), 0);
+
+    // ── Update DOM ──
     document.getElementById('fov-cash').textContent     = fmt(total);
     document.getElementById('fov-cash-sub').textContent = `Safe ${fmt(safe)} + Bank ${fmt(bank)}`;
+
     document.getElementById('fov-savings').textContent  = fmt(mtdSavings);
     const savPct = Math.min((mtdSavings / 1000000) * 100, 100);
     document.getElementById('fov-savings-bar').style.width = savPct + '%';
+
     document.getElementById('fov-rev').textContent     = fmt(mtdRev);
-    document.getElementById('fov-rev-sub').textContent = `${daily.length} days this month`;
+    document.getElementById('fov-rev-sub').textContent = monthName;
+
     document.getElementById('fov-orders').textContent  = mtdOrders;
     document.getElementById('fov-aov').textContent     = aov > 0 ? fmt(aov) : '—';
     document.getElementById('fov-spend').textContent   = fmt(mtdSpend);
+
     const roasEl = document.getElementById('fov-roas');
     roasEl.textContent = roas > 0 ? roas + '×' : '—';
     roasEl.style.color = roas >= 3 ? 'var(--green)' : roas > 0 ? 'var(--yellow)' : 'var(--t)';
+
     const cpaEl = document.getElementById('fov-cpa');
     cpaEl.textContent = cpa > 0 ? fmt(cpa) : '—';
     cpaEl.style.color = cpa > 255 ? 'var(--red)' : cpa > 0 ? 'var(--green)' : 'var(--t)';
-    document.getElementById('fov-exp').textContent = fmt(wkExpenses);
-    document.getElementById('fov-be').textContent  = `${mtdOrders} / 333 this month`;
+
+    document.getElementById('fov-exp').textContent = fmt(mtdExpenses);
+    document.getElementById('fov-be').textContent  = `${mtdOrders} / 333 — ${monthName}`;
+
+    document.getElementById('fov-cash-received').textContent     = fmt(totalCashReceived) + ' EGP';
+    document.getElementById('fov-cash-received-sub').textContent = `${cash.length} deliveries — ${monthName}`;
+    document.getElementById('fov-supplier-cogs').textContent     = fmt(totalSupplierCOGS) + ' EGP';
+    document.getElementById('fov-supplier-cogs-sub').textContent = `${suppliers.length} payments — ${monthName}`;
 
     // Render overview table (last 7 entries)
     const last7 = (await sbFetch('daily_entries', { order: 'date.desc', limit: 7 }));
