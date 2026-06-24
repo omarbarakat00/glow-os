@@ -506,8 +506,13 @@ tr:hover .edit-row-btn{opacity:1}
           <div class="fin-form-title">Delivery Payment Log</div>
           <div class="form-grid fg3">
             <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="cl-date"></div>
-            <div class="form-group"><label class="form-label" style="display:flex;align-items:center;justify-content:space-between">Delivery Company <button type="button" class="add-option-btn" onclick="addDeliveryCompany()">+ Add</button></label>
-              <select class="form-input" id="cl-company"></select></div>
+            <div class="form-group">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <label class="form-label" style="margin:0" for="cl-company">Delivery Company</label>
+                <button type="button" class="add-option-btn" onclick="addDeliveryCompany()">+ Add New</button>
+              </div>
+              <select class="form-input" id="cl-company"></select>
+            </div>
             <div class="form-group"><label class="form-label">Cash Received (EGP)</label><input class="form-input" type="number" id="cl-amount" placeholder="0" oninput="clCalc()"></div>
           </div>
           <div class="form-grid fg3" style="margin-bottom:14px">
@@ -536,8 +541,13 @@ tr:hover .edit-row-btn{opacity:1}
           <div class="fin-form-title">Supplier Payments (Wednesdays)</div>
           <div class="form-grid fg3">
             <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="sp-date"></div>
-            <div class="form-group"><label class="form-label" style="display:flex;align-items:center;justify-content:space-between">Paid To <button type="button" class="add-option-btn" onclick="addSupplierName()">+ Add</button></label>
-              <select class="form-input" id="sp-supplier"></select></div>
+            <div class="form-group">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <label class="form-label" style="margin:0" for="sp-supplier">Paid To</label>
+                <button type="button" class="add-option-btn" onclick="addSupplierName()">+ Add New</button>
+              </div>
+              <select class="form-input" id="sp-supplier"></select>
+            </div>
             <div class="form-group"><label class="form-label">Amount (EGP)</label><input class="form-input" type="number" id="sp-amount" placeholder="0"></div>
           </div>
           <div class="form-grid" style="grid-template-columns:1fr;margin-bottom:14px">
