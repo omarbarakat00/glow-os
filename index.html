@@ -493,7 +493,7 @@ tr:hover .edit-row-btn{opacity:1}
             <div class="form-group"><label class="form-label">AOV (auto)</label><div class="auto-tag" id="di-aov">—</div></div>
             <div class="form-group"><label class="form-label">CPA (auto)</label><div class="auto-tag" id="di-cpa">—</div></div>
             <div class="form-group"><label class="form-label">ROAS (auto)</label><div class="auto-tag" id="di-roas">—</div></div>
-            <div class="form-group"><label class="form-label">CVR% (auto)</label><div class="auto-tag" id="di-cvr">—</div></div>
+            <div class="form-group"><label class="form-label">CVR% <span style="color:var(--t3);font-weight:400">(or type manually)</span></label><input class="form-input" type="number" step="0.01" id="di-cvr" placeholder="auto" style="font-family:'SF Mono',monospace" oninput="this.dataset.manuallySet=this.value?'1':''"></div>
           </div>
           <div class="form-grid" style="grid-template-columns:1fr">
             <div class="form-group"><label class="form-label">Notes</label><input class="form-input" type="text" id="di-notes" placeholder="Anything unusual today?"></div>
@@ -1322,7 +1322,11 @@ function diCalc() {
   setAuto('di-aov',  orders > 0 ? fmt(Math.round(sales / orders)) + ' EGP' : '—');
   setAuto('di-cpa',  purch  > 0 ? fmt(Math.round(spend / purch))  + ' EGP' : '—');
   setAuto('di-roas', spend  > 0 ? (sales / spend).toFixed(2) + '×'          : '—');
-  setAuto('di-cvr',  sessions > 0 ? ((orders / sessions) * 100).toFixed(2) + '%' : '—');
+  // Auto-fill CVR only if sessions is present AND CVR field is empty
+  const cvrEl = document.getElementById('di-cvr');
+  if (sessions > 0 && orders > 0 && !cvrEl.dataset.manuallySet) {
+    cvrEl.value = ((orders / sessions) * 100).toFixed(2);
+  }
 }
 function clCalc() {
   const amt = n('cl-amount');
@@ -1393,9 +1397,14 @@ async function saveDailyEntry() {
   const btn = document.getElementById('di-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
   try {
-    const date  = document.getElementById('di-date').value || todayStr();
-    const sales = n('di-sales'), orders = n('di-orders'), sessions = n('di-sessions'),
-          spend = n('di-spend'), purch = n('di-purchases');
+    const date    = document.getElementById('di-date').value || todayStr();
+    const sales   = n('di-sales'), orders = n('di-orders'), spend = n('di-spend'), purch = n('di-purchases');
+    const cvrVal  = parseFloat(document.getElementById('di-cvr').value) || 0;
+    let   sessions = n('di-sessions');
+    // If no sessions entered but CVR is provided, back-calculate sessions
+    if (!sessions && cvrVal > 0 && orders > 0) {
+      sessions = Math.round(orders / (cvrVal / 100));
+    }
     await sbUpsert('daily_entries', {
       date, net_sales: sales, orders, sessions,
       meta_spend: spend, meta_purchases: purch,
@@ -1403,11 +1412,15 @@ async function saveDailyEntry() {
       updated_at: new Date().toISOString()
     });
     showOk('di-ok');
+    clearForm(['di-sales','di-orders','di-sessions','di-spend','di-purchases','di-notes','di-cvr'], 'di-date');
+    ['di-aov','di-cpa','di-roas'].forEach(id => setAuto(id,'—'));
     loadDailyHist();
     loadFinOverview();
   } catch(e) { alert('Error: ' + e.message); }
   btn.disabled = false; btn.textContent = 'Save Entry';
   btn.style.removeProperty('background');
+  const cvrEl = document.getElementById('di-cvr');
+  cvrEl.value = ''; cvrEl.dataset.manuallySet = '';
 }
 
 async function saveCashLog() {
@@ -1419,8 +1432,9 @@ async function saveCashLog() {
       notes: document.getElementById('cl-notes').value || ''
     });
     showOk('cl-ok');
-    ['cl-amount','cl-notes'].forEach(id => document.getElementById(id).value = '');
-    clCalc(); loadCashHist(); loadFinOverview();
+    clearForm(['cl-amount','cl-notes'], 'cl-date');
+    ['cl-savings','cl-tosafe'].forEach(id => setAuto(id,'—'));
+    loadCashHist(); loadFinOverview();
   } catch(e) { alert('Error: ' + e.message); }
 }
 
@@ -1433,7 +1447,7 @@ async function saveSupplier() {
       notes: document.getElementById('sp-notes').value || ''
     });
     showOk('sp-ok');
-    ['sp-amount','sp-notes'].forEach(id => document.getElementById(id).value = '');
+    clearForm(['sp-amount','sp-notes'], 'sp-date');
     loadSupplierHist();
   } catch(e) { alert('Error: ' + e.message); }
 }
@@ -1451,6 +1465,8 @@ async function saveJournal() {
       updated_at: new Date().toISOString()
     });
     showOk('dj-ok');
+    clearForm(['dj-safe','dj-bank','dj-expdesc','dj-expamt','dj-ads','dj-notes'], 'dj-date');
+    setAuto('dj-total','—');
     loadJournalHist(); loadFinOverview();
   } catch(e) { alert('Error: ' + e.message); }
 }
@@ -1467,6 +1483,7 @@ async function saveAdSpend() {
       notes: document.getElementById('as-notes').value || ''
     });
     showOk('as-ok');
+    clearForm(['as-start','as-end','as-spend','as-purchases','as-sales','as-notes'], null);
     loadAdSpendHist();
   } catch(e) { alert('Error: ' + e.message); }
 }
@@ -1491,6 +1508,17 @@ async function savePL() {
     });
     showOk('pl-ok');
   } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ── CLEAR FORM AFTER SAVE ──
+function clearForm(ids, dateId) {
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = '';
+    if (el.dataset) el.dataset.manuallySet = '';
+  });
+  if (dateId) document.getElementById(dateId).value = todayStr();
 }
 
 // ── HISTORY STATE (limits) ──
