@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Glow OS</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0a0a0a;color:#f0f0f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;min-height:100vh}
@@ -183,6 +184,20 @@ tr:hover .edit-row-btn{opacity:1}
 .pl-section-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);padding:8px 0 12px;border-bottom:1px solid var(--b);margin-bottom:12px}
 .pl-total{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--b);margin-top:4px;font-size:13px;font-weight:600}
 .verdict-sel{background:var(--s2);border:1px solid var(--b2);border-radius:7px;padding:9px 12px;color:var(--t);font-size:13px;outline:none;cursor:pointer;width:100%}
+
+/* FINANCE STEROIDS */
+.fin-alert{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;font-size:12px;font-weight:500;margin-bottom:8px}
+.fin-alert.warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);color:var(--yellow)}
+.fin-alert.danger{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:var(--red)}
+.fin-alert.good{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.25);color:var(--green)}
+.chg-badge{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;letter-spacing:.02em}
+.chg-up{background:rgba(74,222,128,.12);color:var(--green)}
+.chg-dn{background:rgba(248,113,113,.12);color:var(--red)}
+.sync-btn{background:none;border:1px solid var(--b2);color:var(--t2);border-radius:6px;padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;letter-spacing:.04em;margin-bottom:14px;font-family:inherit}
+.sync-btn:hover{border-color:var(--gold);color:var(--gold)}
+.sync-btn:disabled{opacity:.4;cursor:not-allowed}
+.chart-box{background:var(--s);border:1px solid var(--b);border-radius:10px;padding:16px 18px}
+.chart-lbl{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:12px}
 </style>
 </head>
 <body>
@@ -441,17 +456,17 @@ tr:hover .edit-row-btn{opacity:1}
           <div class="card"><div class="c-lbl">Cash Position</div><div class="c-val" id="fov-cash">—</div><div class="c-sub" id="fov-cash-sub">Safe + Bank</div></div>
           <div class="card"><div class="c-lbl">Savings Progress</div><div class="c-val" id="fov-savings">—</div><div class="c-sub">Goal: 1,000,000 EGP</div>
             <div class="bar-track" style="margin-top:8px"><div class="bar-fill" id="fov-savings-bar" style="width:0%"></div></div></div>
-          <div class="card"><div class="c-lbl">This Month Revenue</div><div class="c-val" id="fov-rev">—</div><div class="c-sub" id="fov-rev-sub">from daily entries</div></div>
+          <div class="card"><div class="c-lbl">This Month Revenue</div><div class="c-val" id="fov-rev">—</div><div id="fov-rev-chg" style="margin-top:4px;font-size:11px"></div><div class="c-sub" id="fov-rev-sub">from daily entries</div></div>
         </div>
         <div class="cards c4" style="margin-bottom:12px">
-          <div class="card"><div class="c-lbl">Orders (MTD)</div><div class="c-val" id="fov-orders">—</div><div class="c-sub">confirmed</div></div>
+          <div class="card"><div class="c-lbl">Orders (MTD)</div><div class="c-val" id="fov-orders">—</div><div id="fov-orders-chg" style="margin-top:4px;font-size:11px"></div><div class="c-sub">confirmed</div></div>
           <div class="card"><div class="c-lbl">AOV (MTD)</div><div class="c-val" id="fov-aov">—</div><div class="c-sub">EGP avg order</div></div>
-          <div class="card"><div class="c-lbl">Meta Spend (MTD)</div><div class="c-val" id="fov-spend">—</div><div class="c-sub">EGP</div></div>
-          <div class="card"><div class="c-lbl">ROAS (MTD)</div><div class="c-val" id="fov-roas">—</div><div class="c-sub">target: ≥3×</div></div>
+          <div class="card"><div class="c-lbl">Meta Spend (MTD)</div><div class="c-val" id="fov-spend">—</div><div id="fov-spend-chg" style="margin-top:4px;font-size:11px"></div><div class="c-sub">EGP</div></div>
+          <div class="card"><div class="c-lbl">ROAS (MTD)</div><div class="c-val" id="fov-roas">—</div><div id="fov-roas-chg" style="margin-top:4px;font-size:11px"></div><div class="c-sub">target: ≥3×</div></div>
         </div>
         <div class="cards c4">
-          <div class="card"><div class="c-lbl">CPA (MTD)</div><div class="c-val" id="fov-cpa">—</div><div class="c-sub">ceiling: 255 EGP</div></div>
-          <div class="card"><div class="c-lbl">Break-even Orders</div><div class="c-val">333</div><div class="c-sub" id="fov-be">orders/month needed</div></div>
+          <div class="card"><div class="c-lbl">CPA (MTD)</div><div class="c-val" id="fov-cpa">—</div><div id="fov-cpa-chg" style="margin-top:4px;font-size:11px"></div><div class="c-sub">ceiling: 255 EGP</div></div>
+          <div class="card"><div class="c-lbl">Break-even Progress</div><div class="c-val"><span id="fov-orders-curr">0</span><span style="color:var(--t3);font-size:14px"> / 333</span></div><div class="c-sub" id="fov-be">orders this month</div><div class="bar-track" style="margin-top:8px"><div class="bar-fill" id="fov-be-bar" style="width:0%"></div></div></div>
           <div class="card"><div class="c-lbl">Operating Expenses (MTD)</div><div class="c-val" id="fov-exp">—</div><div class="c-sub" id="fov-exp-sub">from journal</div></div>
           <div class="card"><div class="c-lbl">Ads Paid (MTD)</div><div class="c-val" id="fov-ads">—</div><div class="c-sub" id="fov-ads-sub">from journal</div></div>
         </div>
@@ -467,6 +482,40 @@ tr:hover .edit-row-btn{opacity:1}
             <div class="c-sub" id="fov-supplier-cogs-sub">total paid to suppliers</div>
           </div>
         </div>
+        <!-- SMART ALERTS -->
+        <div id="fin-alerts" style="margin-top:12px"></div>
+
+        <!-- NET PROFIT + PROJECTION + SAVINGS PROJECTION -->
+        <div class="cards c3" style="margin-top:12px">
+          <div class="card">
+            <div class="c-lbl">Net Profit (MTD)</div>
+            <div class="c-val" id="fov-netprofit">—</div>
+            <div class="c-sub" id="fov-netprofit-sub">Rev − COGS − Expenses − Ads</div>
+          </div>
+          <div class="card">
+            <div class="c-lbl">Month-end Projection</div>
+            <div class="c-val" id="fov-proj-rev">—</div>
+            <div class="c-sub" id="fov-proj-sub">at current daily pace</div>
+          </div>
+          <div class="card">
+            <div class="c-lbl">Savings Goal ETA</div>
+            <div class="c-val" id="fov-sav-proj">—</div>
+            <div class="c-sub" id="fov-sav-proj-sub">months to 1M EGP</div>
+          </div>
+        </div>
+
+        <!-- CHARTS -->
+        <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="chart-box">
+            <div class="chart-lbl">30-Day Revenue &amp; ROAS Trend</div>
+            <canvas id="chart-revenue" height="160"></canvas>
+          </div>
+          <div class="chart-box">
+            <div class="chart-lbl">Monthly Cash Flow (In vs Out)</div>
+            <canvas id="chart-cashflow" height="160"></canvas>
+          </div>
+        </div>
+
         <div style="margin-top:16px;background:var(--s);border:1px solid var(--b);border-radius:10px;padding:16px 18px">
           <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:12px">LAST 7 ENTRIES</div>
           <div class="tbl-wrap" style="margin:0"><table><thead><tr><th>Date</th><th>Revenue</th><th>Orders</th><th>AOV</th><th>Meta Spend</th><th>ROAS</th><th>Notes</th></tr></thead>
@@ -477,7 +526,10 @@ tr:hover .edit-row-btn{opacity:1}
       <!-- ── DAILY INPUT ── -->
       <div class="fin-panel" id="fp-daily">
         <div class="fin-form">
-          <div class="fin-form-title">Daily CFO Entry</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div class="fin-form-title" style="margin:0">Daily CFO Entry</div>
+            <button id="sync-btn" class="sync-btn" onclick="syncFromShopifyMeta()">🔄 Sync Today from Shopify &amp; Meta</button>
+          </div>
           <div class="form-grid fg3">
             <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="di-date"></div>
             <div class="form-group"><label class="form-label">Net Sales (EGP)</label><input class="form-input" type="number" id="di-sales" placeholder="0" oninput="diCalc()"></div>
@@ -1752,98 +1804,311 @@ async function loadPL() {
   } catch(e) { console.error(e); }
 }
 
+// ── CHART INSTANCES ──────────────────────────────────────────────────────────
+const _charts = {};
+
+function renderFinChart(canvasId, rows) {
+  if (!window.Chart) return;
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  if (_charts[canvasId]) { _charts[canvasId].destroy(); delete _charts[canvasId]; }
+  const labels   = rows.map(r => r.date.slice(5));
+  const revData  = rows.map(r => r.net_sales   || 0);
+  const roasData = rows.map(r => r.meta_spend > 0 ? parseFloat((r.net_sales / r.meta_spend).toFixed(2)) : null);
+  _charts[canvasId] = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Revenue (EGP)', data: revData, backgroundColor: 'rgba(201,169,110,0.22)', borderColor: 'rgba(201,169,110,0.7)', borderWidth: 1, borderRadius: 3, yAxisID: 'y' },
+        { label: 'ROAS', data: roasData, type: 'line', borderColor: 'rgba(74,222,128,0.8)', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 2, tension: 0.3, yAxisID: 'y1', spanGaps: true }
+      ]
+    },
+    options: {
+      responsive: true, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { color: '#666', font: { size: 10 } } } },
+      scales: {
+        x:  { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#444', font: { size: 9 } } },
+        y:  { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#555', font: { size: 9 }, callback: v => fmt(v) }, position: 'left' },
+        y1: { grid: { display: false }, ticks: { color: '#4ade80', font: { size: 9 }, callback: v => v + '×' }, position: 'right' }
+      }
+    }
+  });
+}
+
+function renderCashFlowChart(canvasId, days, cashIn, cashOut) {
+  if (!window.Chart) return;
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  if (_charts[canvasId]) { _charts[canvasId].destroy(); delete _charts[canvasId]; }
+  _charts[canvasId] = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: days.map(d => d.slice(5)),
+      datasets: [
+        { label: 'Cash In', data: days.map(d => cashIn[d] || 0),  backgroundColor: 'rgba(74,222,128,0.25)', borderColor: 'rgba(74,222,128,0.6)', borderWidth: 1, borderRadius: 3 },
+        { label: 'Cash Out (Suppliers)', data: days.map(d => cashOut[d] || 0), backgroundColor: 'rgba(248,113,113,0.25)', borderColor: 'rgba(248,113,113,0.6)', borderWidth: 1, borderRadius: 3 }
+      ]
+    },
+    options: {
+      responsive: true, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { color: '#666', font: { size: 10 } } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#444', font: { size: 9 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#555', font: { size: 9 }, callback: v => fmt(v) } }
+      }
+    }
+  });
+}
+
 async function loadFinOverview() {
   try {
-    const now        = new Date();
-    const monthStart = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-    const monthName  = now.toLocaleString('en-EG', { month: 'long', year: 'numeric' }); // e.g. "June 2026"
+    const now         = new Date();
+    const year        = now.getFullYear();
+    const month       = now.getMonth() + 1;
+    const daysElapsed = now.getDate();
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const monthStart  = `${year}-${String(month).padStart(2,'0')}-01`;
+    const monthName   = now.toLocaleString('en-EG', { month: 'long', year: 'numeric' });
 
-    const [daily, journalLatest, journalMTD, cash, suppliers] = await Promise.all([
+    // Previous month range
+    const prevDate       = new Date(year, month - 2, 1);
+    const prevMonthStart = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,'0')}-01`;
+
+    const [daily, journalLatest, journalMTD, cash, suppliers, prevDaily, chart30] = await Promise.all([
       sbFetch('daily_entries',    { order: 'date.desc', limit: 31,  filters: [`date=gte.${monthStart}`] }),
-      sbFetch('daily_journal',    { order: 'date.desc', limit: 1 }),                                        // for cash position
-      sbFetch('daily_journal',    { order: 'date.desc', limit: 31,  filters: [`date=gte.${monthStart}`] }), // for MTD expenses
+      sbFetch('daily_journal',    { order: 'date.desc', limit: 1 }),
+      sbFetch('daily_journal',    { order: 'date.desc', limit: 31,  filters: [`date=gte.${monthStart}`] }),
       sbFetch('cash_log',         { order: 'date.desc', limit: 200, filters: [`date=gte.${monthStart}`] }),
-      sbFetch('supplier_payments',{ order: 'date.desc', limit: 200, filters: [`date=gte.${monthStart}`] })
+      sbFetch('supplier_payments',{ order: 'date.desc', limit: 200, filters: [`date=gte.${monthStart}`] }),
+      sbFetch('daily_entries',    { order: 'date.desc', limit: 31,  filters: [`date=gte.${prevMonthStart}`, `date=lt.${monthStart}`] }),
+      sbFetch('daily_entries',    { order: 'date.desc', limit: 30 })
     ]);
 
-    // MTD revenue / orders / spend
-    const mtdRev    = daily.reduce((s, r) => s + (r.net_sales    || 0), 0);
-    const mtdOrders = daily.reduce((s, r) => s + (r.orders       || 0), 0);
-    const mtdSpend  = daily.reduce((s, r) => s + (r.meta_spend   || 0), 0);
+    // ── MTD calcs ──
+    const mtdRev    = daily.reduce((s, r) => s + (r.net_sales  || 0), 0);
+    const mtdOrders = daily.reduce((s, r) => s + (r.orders     || 0), 0);
+    const mtdSpend  = daily.reduce((s, r) => s + (r.meta_spend || 0), 0);
     const aov       = mtdOrders > 0 ? Math.round(mtdRev / mtdOrders) : 0;
-    const roas      = mtdSpend  > 0 ? (mtdRev / mtdSpend).toFixed(2)  : 0;
+    const roas      = mtdSpend  > 0 ? mtdRev / mtdSpend : 0;
     const cpa       = mtdOrders > 0 ? Math.round(mtdSpend / mtdOrders) : 0;
 
-    // Cash position from latest journal entry
-    const latestJ = journalLatest[0];
-    const safe  = latestJ?.safe_balance  || 0;
-    const bank  = latestJ?.bank_balance  || 0;
-    const total = safe + bank;
+    // ── Previous month calcs ──
+    const prevRev    = prevDaily.reduce((s, r) => s + (r.net_sales  || 0), 0);
+    const prevOrders = prevDaily.reduce((s, r) => s + (r.orders     || 0), 0);
+    const prevSpend  = prevDaily.reduce((s, r) => s + (r.meta_spend || 0), 0);
+    const prevROAS   = prevSpend > 0 ? prevRev / prevSpend : 0;
+    const prevCPA    = prevOrders > 0 ? Math.round(prevSpend / prevOrders) : 0;
 
-    // Savings = 7% of all cash received this month
+    // ── Cash position ──
+    const latestJ = journalLatest[0];
+    const safe    = latestJ?.safe_balance || 0;
+    const bank    = latestJ?.bank_balance || 0;
+    const total   = safe + bank;
+
+    // ── Savings ──
     const mtdCash    = cash.reduce((s, r) => s + (r.cash_received || 0), 0);
     const mtdSavings = Math.round(mtdCash * 0.07);
 
-    // MTD expenses — split operating vs ads
+    // ── Expenses ──
     const mtdExpenses = journalMTD.reduce((s, r) => s + (r.expense_amount || 0), 0);
     const mtdAdsPaid  = journalMTD.reduce((s, r) => s + (r.ads_paid       || 0), 0);
 
-    // Cash received & supplier COGS (MTD)
-    const totalCashReceived  = cash.reduce((s, r)      => s + (r.cash_received || 0), 0);
-    const totalSupplierCOGS  = suppliers.reduce((s, r) => s + (r.amount       || 0), 0);
+    // ── Cash received & supplier COGS ──
+    const totalCashReceived = cash.reduce((s, r)      => s + (r.cash_received || 0), 0);
+    const totalSupplierCOGS = suppliers.reduce((s, r) => s + (r.amount        || 0), 0);
 
-    // ── Update DOM ──
+    // ── Net Profit ──
+    const netProfit = mtdRev - totalSupplierCOGS - mtdExpenses - mtdAdsPaid;
+
+    // ── Projections ──
+    const projRev    = daysElapsed > 0 ? Math.round((mtdRev    / daysElapsed) * daysInMonth) : 0;
+    const projOrders = daysElapsed > 0 ? Math.round((mtdOrders / daysElapsed) * daysInMonth) : 0;
+
+    // ── Savings goal projection ──
+    const dailySavRate   = daysElapsed > 0 ? mtdSavings / daysElapsed : 0;
+    const monthlySavRate = dailySavRate * 30;
+    const monthsToGoal   = monthlySavRate > 0 ? Math.ceil(1_000_000 / monthlySavRate) : null;
+
+    // ── % change helper ──
+    function chgBadge(cur, prev, lowerIsBetter = false) {
+      if (!prev || prev === 0) return '';
+      const pct  = ((cur - prev) / prev * 100);
+      const up   = pct >= 0;
+      const good = lowerIsBetter ? !up : up;
+      const cls  = good ? 'chg-up' : 'chg-dn';
+      return `<span class="chg-badge ${cls}">${up ? '↑' : '↓'}${Math.abs(pct).toFixed(1)}% vs last month</span>`;
+    }
+
+    // ── DOM updates ──
     document.getElementById('fov-cash').textContent     = fmt(total);
     document.getElementById('fov-cash-sub').textContent = `Safe ${fmt(safe)} + Bank ${fmt(bank)}`;
 
     document.getElementById('fov-savings').textContent  = fmt(mtdSavings);
-    const savPct = Math.min((mtdSavings / 1000000) * 100, 100);
-    document.getElementById('fov-savings-bar').style.width = savPct + '%';
+    document.getElementById('fov-savings-bar').style.width = Math.min((mtdSavings / 1_000_000) * 100, 100) + '%';
 
     document.getElementById('fov-rev').textContent     = fmt(mtdRev);
     document.getElementById('fov-rev-sub').textContent = monthName;
+    document.getElementById('fov-rev-chg').innerHTML   = chgBadge(mtdRev, prevRev);
 
     document.getElementById('fov-orders').textContent  = mtdOrders;
+    document.getElementById('fov-orders-chg').innerHTML = chgBadge(mtdOrders, prevOrders);
+
     document.getElementById('fov-aov').textContent     = aov > 0 ? fmt(aov) : '—';
     document.getElementById('fov-spend').textContent   = fmt(mtdSpend);
+    document.getElementById('fov-spend-chg').innerHTML = chgBadge(mtdSpend, prevSpend, true);
 
     const roasEl = document.getElementById('fov-roas');
-    roasEl.textContent = roas > 0 ? roas + '×' : '—';
+    roasEl.textContent = roas > 0 ? roas.toFixed(2) + '×' : '—';
     roasEl.style.color = roas >= 3 ? 'var(--green)' : roas > 0 ? 'var(--yellow)' : 'var(--t)';
+    document.getElementById('fov-roas-chg').innerHTML  = chgBadge(roas, prevROAS);
 
     const cpaEl = document.getElementById('fov-cpa');
     cpaEl.textContent = cpa > 0 ? fmt(cpa) : '—';
     cpaEl.style.color = cpa > 255 ? 'var(--red)' : cpa > 0 ? 'var(--green)' : 'var(--t)';
+    document.getElementById('fov-cpa-chg').innerHTML   = chgBadge(cpa, prevCPA, true);
+
+    // Break-even progress bar
+    const beEl  = document.getElementById('fov-orders-curr');
+    const beBar = document.getElementById('fov-be-bar');
+    if (beEl)  beEl.textContent = mtdOrders;
+    if (beBar) {
+      const bePct = Math.min((mtdOrders / 333) * 100, 100);
+      beBar.style.width      = bePct + '%';
+      beBar.style.background = mtdOrders >= 333 ? 'var(--green)' : 'var(--gold)';
+    }
+    document.getElementById('fov-be').textContent = `orders in ${monthName} · break-even: 333`;
 
     document.getElementById('fov-exp').textContent     = fmt(mtdExpenses);
     document.getElementById('fov-exp-sub').textContent = monthName;
     document.getElementById('fov-ads').textContent     = fmt(mtdAdsPaid);
     document.getElementById('fov-ads-sub').textContent = monthName;
-    document.getElementById('fov-be').textContent      = `${mtdOrders} / 333 — ${monthName}`;
 
     document.getElementById('fov-cash-received').textContent     = fmt(totalCashReceived) + ' EGP';
     document.getElementById('fov-cash-received-sub').textContent = `${cash.length} deliveries — ${monthName}`;
     document.getElementById('fov-supplier-cogs').textContent     = fmt(totalSupplierCOGS) + ' EGP';
     document.getElementById('fov-supplier-cogs-sub').textContent = `${suppliers.length} payments — ${monthName}`;
 
-    // Render overview table (last 7 entries)
-    const last7 = (await sbFetch('daily_entries', { order: 'date.desc', limit: 7 }));
+    // Net Profit card
+    const npEl = document.getElementById('fov-netprofit');
+    if (npEl) {
+      npEl.textContent  = fmt(netProfit) + ' EGP';
+      npEl.style.color  = netProfit >= 0 ? 'var(--green)' : 'var(--red)';
+    }
+    const npSub = document.getElementById('fov-netprofit-sub');
+    if (npSub) npSub.textContent = `Rev − COGS − Exp − Ads · ${monthName}`;
+
+    // Projection card
+    const prEl  = document.getElementById('fov-proj-rev');
+    const prSub = document.getElementById('fov-proj-sub');
+    if (prEl)  prEl.textContent  = fmt(projRev) + ' EGP';
+    if (prSub) prSub.textContent = `~${projOrders} orders · ${daysElapsed}/${daysInMonth} days elapsed`;
+
+    // Savings projection card
+    const spEl  = document.getElementById('fov-sav-proj');
+    const spSub = document.getElementById('fov-sav-proj-sub');
+    if (spEl && spSub) {
+      if (monthsToGoal !== null) {
+        spEl.textContent = monthsToGoal + ' months';
+        const eta = new Date(now); eta.setMonth(eta.getMonth() + monthsToGoal);
+        spSub.textContent = `At current rate → ${eta.toLocaleString('en-EG', { month: 'long', year: 'numeric' })}`;
+      } else {
+        spEl.textContent  = '—';
+        spSub.textContent = 'Add cash log entries to project';
+      }
+    }
+
+    // ── Smart Alerts ──
+    const alertsDiv = document.getElementById('fin-alerts');
+    if (alertsDiv) {
+      const items = [];
+      if (cpa > 255 && mtdSpend > 0)
+        items.push({ cls: 'danger', msg: `⚠️ CPA is ${fmt(cpa)} EGP — above 255 EGP ceiling. Review ad targeting.` });
+      if (roas < 3 && roas > 0 && mtdSpend > 0)
+        items.push({ cls: 'warn', msg: `📉 ROAS is ${roas.toFixed(2)}× — below 3× target. Check creative performance.` });
+      if (mtdOrders < 333 && daysElapsed > 15 && projOrders < 333)
+        items.push({ cls: 'warn', msg: `🎯 On pace for ~${projOrders} orders — below 333 break-even. Increase budget or CVR.` });
+      if (mtdOrders >= 333)
+        items.push({ cls: 'good', msg: `✅ Break-even hit! ${mtdOrders} orders this month — above the 333 target.` });
+      if (roas >= 3 && cpa <= 255 && mtdSpend > 0)
+        items.push({ cls: 'good', msg: `🚀 Ads healthy — ROAS ${roas.toFixed(2)}×, CPA ${fmt(cpa)} EGP. Consider scaling budget.` });
+      alertsDiv.innerHTML = items.map(a => `<div class="fin-alert ${a.cls}">${a.msg}</div>`).join('');
+    }
+
+    // ── Charts ──
+    const chart30Asc = [...chart30].reverse(); // oldest → newest
+    renderFinChart('chart-revenue', chart30Asc);
+
+    const cashByDay     = {};
+    const supplierByDay = {};
+    cash.forEach(r      => { cashByDay[r.date]     = (cashByDay[r.date]     || 0) + (r.cash_received || 0); });
+    suppliers.forEach(r => { supplierByDay[r.date] = (supplierByDay[r.date] || 0) + (r.amount        || 0); });
+    const allDays = [...new Set([...Object.keys(cashByDay), ...Object.keys(supplierByDay)])].sort();
+    renderCashFlowChart('chart-cashflow', allDays, cashByDay, supplierByDay);
+
+    // ── Last 7 entries table ──
+    const last7 = chart30.slice(0, 7);
     const tb = document.getElementById('fov-table');
     if (!last7.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">No entries yet — add your first daily entry</td></tr>'; return; }
     tb.innerHTML = last7.map(r => {
-      const aov  = r.orders > 0 ? fmt(Math.round(r.net_sales / r.orders)) : '—';
-      const roas = r.meta_spend > 0 ? (r.net_sales / r.meta_spend).toFixed(2) + '×' : '—';
+      const rov  = r.orders > 0 ? fmt(Math.round(r.net_sales / r.orders)) : '—';
+      const rr   = r.meta_spend > 0 ? (r.net_sales / r.meta_spend).toFixed(2) + '×' : '—';
       return `<tr>
         <td>${r.date}</td>
         <td class="mono gold">${fmt(r.net_sales)} EGP</td>
         <td class="mono">${r.orders}</td>
-        <td class="mono">${aov} EGP</td>
+        <td class="mono">${rov} EGP</td>
         <td class="mono">${fmt(r.meta_spend)} EGP</td>
-        <td class="mono" style="color:var(--green)">${roas}</td>
+        <td class="mono" style="color:${r.meta_spend > 0 && r.net_sales / r.meta_spend >= 3 ? 'var(--green)' : 'var(--yellow)'}">${rr}</td>
         <td style="color:var(--t3)">${r.notes || ''}</td>
       </tr>`;
     }).join('');
   } catch(e) { console.error('Finance overview error:', e); }
+}
+
+// ── SYNC FROM SHOPIFY + META ─────────────────────────────────────────────────
+async function syncFromShopifyMeta() {
+  const btn = document.getElementById('sync-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing...'; }
+  try {
+    const [shopRes, metaRes] = await Promise.allSettled([
+      fetch('/api/shopify').then(r => r.json()),
+      fetch('/api/meta').then(r => r.json())
+    ]);
+    const shopify = shopRes.status === 'fulfilled' ? shopRes.value : {};
+    const meta    = metaRes.status    === 'fulfilled' ? metaRes.value    : {};
+
+    // Revenue: try today first, then yesterday fallback
+    const revToday = shopify.rev_today || shopify.yesterday?.rev_today || '';
+    if (revToday) document.getElementById('di-sales').value = Math.round(revToday);
+
+    // Orders
+    const ordToday = shopify.orders_today || shopify.yesterday?.orders_today || '';
+    if (ordToday) document.getElementById('di-orders').value = ordToday;
+
+    // Meta spend & purchases
+    if (meta.spend)     document.getElementById('di-spend').value     = Math.round(meta.spend);
+    if (meta.purchases) document.getElementById('di-purchases').value = meta.purchases;
+
+    diCalc();
+
+    if (btn) {
+      btn.textContent = '✓ Synced from Shopify & Meta';
+      btn.style.borderColor = 'var(--green)';
+      btn.style.color       = 'var(--green)';
+    }
+    setTimeout(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🔄 Sync Today from Shopify & Meta';
+        btn.style.borderColor = '';
+        btn.style.color       = '';
+      }
+    }, 3000);
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync Today from Shopify & Meta'; }
+    alert('Sync failed: ' + e.message);
+  }
 }
 
 // ── INIT FINANCE DATES ──
