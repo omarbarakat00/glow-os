@@ -14,7 +14,7 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Set SHOPIFY_STORE and SHOPIFY_ACCESS_TOKEN in Vercel env vars.' });
   }
 
-  const BASE = `https://${STORE}/admin/api/2024-04`;
+  const BASE = `https://${STORE}/admin/api/2025-01`;
   const HDRS = { 'X-Shopify-Access-Token': TOKEN, 'Content-Type': 'application/json' };
 
   // Shopify store timezone is UTC+3 (matches Shopify Analytics day boundaries)
