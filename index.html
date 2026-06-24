@@ -2086,6 +2086,9 @@ async function syncFromShopifyMeta() {
     const ordToday = shopify.orders_today || shopify.yesterday?.orders_today || '';
     if (ordToday) document.getElementById('di-orders').value = ordToday;
 
+    // Sessions
+    if (shopify.sessions_today) document.getElementById('di-sessions').value = shopify.sessions_today;
+
     // Meta spend & purchases
     if (meta.spend)     document.getElementById('di-spend').value     = Math.round(meta.spend);
     if (meta.purchases) document.getElementById('di-purchases').value = meta.purchases;

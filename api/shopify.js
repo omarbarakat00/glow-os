@@ -38,6 +38,17 @@ module.exports = async function handler(req, res) {
     return data;
   }
 
+  async function shopifyGQL(gqlQuery) {
+    const r = await fetch(`https://${STORE}/admin/api/2024-04/graphql.json`, {
+      method: 'POST',
+      headers: { ...HDRS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: gqlQuery })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(JSON.stringify(data.errors || data));
+    return data;
+  }
+
   // Fetch all orders since a given ISO timestamp, following cursor pagination.
   // Safety cap: 20 pages (5000 orders). Filters out cancelled orders.
   async function fetchOrders(sinceISO, fields) {
@@ -149,11 +160,27 @@ module.exports = async function handler(req, res) {
     const yest  = metrics(yestOrders);
     const mtd   = metrics(mtdOrders);
 
+    // Sessions via ShopifyQL GraphQL
+    let sessionsToday = 0;
+    try {
+      const gql = await shopifyGQL(`{
+        shopifyqlQuery(query: "FROM sessions SHOW sessions TIMESERIES day SINCE ${todayKey} UNTIL ${todayKey}") {
+          tableData { rows }
+          parseErrors { code message }
+        }
+      }`);
+      const rows = gql?.data?.shopifyqlQuery?.tableData?.rows || [];
+      if (rows.length > 0) sessionsToday = parseInt(rows[0].sessions) || 0;
+    } catch(e) {
+      console.warn('[Sessions]', e.message);
+    }
+
     res.json({
       // Today
-      rev_today:    today.rev,
-      orders_today: today.orders,
-      aov:          today.aov,
+      rev_today:      today.rev,
+      orders_today:   today.orders,
+      sessions_today: sessionsToday,
+      aov:            today.aov,
       // MTD
       rev_mtd:      mtd.rev,
       return_rate:  mtd.return_rate,
