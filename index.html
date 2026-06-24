@@ -147,6 +147,34 @@ td:first-child{color:var(--t);font-weight:500}
 
 /* SECTION ERROR */
 .sec-err{background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.15);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--red);margin-bottom:12px;display:none}
+
+/* FINANCE MODULE */
+.fin-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.ftab{background:var(--s);border:1px solid var(--b2);border-radius:7px;padding:7px 16px;font-size:12px;color:var(--t2);cursor:pointer;font-weight:500;transition:all .15s}
+.ftab.on{background:rgba(201,169,110,.12);border-color:var(--gold);color:var(--gold);font-weight:600}
+.ftab:hover:not(.on){background:var(--s2);color:var(--t)}
+.fin-panel{display:none}.fin-panel.on{display:block}
+.fin-form{background:var(--s);border:1px solid var(--b);border-radius:10px;padding:20px;margin-bottom:18px}
+.fin-form-title{font-size:12px;font-weight:600;color:var(--t2);letter-spacing:.06em;margin-bottom:16px;text-transform:uppercase}
+.form-grid{display:grid;gap:12px;margin-bottom:14px}
+.fg2{grid-template-columns:1fr 1fr}
+.fg3{grid-template-columns:1fr 1fr 1fr}
+.fg4{grid-template-columns:1fr 1fr 1fr 1fr}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.form-input{background:var(--s2);border:1px solid var(--b2);border-radius:7px;padding:9px 12px;color:var(--t);font-size:13px;outline:none;font-family:inherit;width:100%}
+.form-input:focus{border-color:var(--gold)}
+.auto-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(201,169,110,.08);border:1px solid rgba(201,169,110,.2);border-radius:7px;padding:9px 12px;font-family:'SF Mono',monospace;font-size:13px;color:var(--gold)}
+.fin-submit{background:var(--gold);color:#000;border:none;border-radius:7px;padding:10px 22px;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s}
+.fin-submit:hover{background:#a07840;color:#fff}
+.fin-submit:disabled{background:var(--b2);color:var(--t3);cursor:not-allowed}
+.fin-success{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:7px;padding:10px 14px;font-size:12px;color:var(--green);display:none;margin-top:10px}
+.fin-hist-wrap{margin-top:6px}
+.fin-hist-hdr{font-size:11px;font-weight:600;color:var(--t2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+.pl-section{margin-bottom:20px}
+.pl-section-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);padding:8px 0 12px;border-bottom:1px solid var(--b);margin-bottom:12px}
+.pl-total{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--b);margin-top:4px;font-size:13px;font-weight:600}
+.verdict-sel{background:var(--s2);border:1px solid var(--b2);border-radius:7px;padding:9px 12px;color:var(--t);font-size:13px;outline:none;cursor:pointer;width:100%}
 </style>
 </head>
 <body>
@@ -386,22 +414,319 @@ td:first-child{color:var(--t);font-weight:500}
     <!-- FINANCE -->
     <div class="page" id="p-finance">
       <div class="pg-title">Finance</div>
-      <div class="pg-sub">CFO Sheet + Cash Master — Google Sheets</div>
-      <div class="sec-err" id="finance-err"></div>
-      <div class="cards c3">
-        <div class="card"><div class="c-lbl">Net Profit (June)</div><div class="c-val" id="f-profit">—</div><div class="c-sub">EGP after all costs</div></div>
-        <div class="card"><div class="c-lbl">Cash Position</div><div class="c-val" id="f-cash">—</div><div class="c-sub">Cash Master balance</div></div>
-        <div class="card"><div class="c-lbl">COD Float</div><div class="c-val" id="f-float">—</div><div class="c-sub">held by carriers</div></div>
+      <div class="pg-sub">Your CFO + Cash Master — built into Glow OS</div>
+
+      <!-- SUB TABS -->
+      <div class="fin-tabs">
+        <button class="ftab on" onclick="finTab('overview',this)">📊 Overview</button>
+        <button class="ftab" onclick="finTab('daily',this)">📅 Daily Input</button>
+        <button class="ftab" onclick="finTab('cash',this)">💵 Cash Log</button>
+        <button class="ftab" onclick="finTab('suppliers',this)">🏭 Suppliers</button>
+        <button class="ftab" onclick="finTab('journal',this)">📒 Journal</button>
+        <button class="ftab" onclick="finTab('pl',this)">📈 Monthly P&L</button>
+        <button class="ftab" onclick="finTab('adspend',this)">📣 Ad Spend</button>
       </div>
-      <div class="cards c3">
-        <div class="card"><div class="c-lbl">Ad Spend (June)</div><div class="c-val" id="f-ads">—</div><div class="c-sub">total month</div></div>
-        <div class="card"><div class="c-lbl">COGS Ratio</div><div class="c-val" id="f-cogs">—</div><div class="c-sub">target: ≤40%</div></div>
-        <div class="card"><div class="c-lbl">Gross Margin</div><div class="c-val" id="f-margin">—</div><div class="c-sub">target: ≥60%</div></div>
+
+      <!-- ── OVERVIEW ── -->
+      <div class="fin-panel on" id="fp-overview">
+        <div class="cards c3" style="margin-bottom:12px">
+          <div class="card"><div class="c-lbl">Cash Position</div><div class="c-val" id="fov-cash">—</div><div class="c-sub" id="fov-cash-sub">Safe + Bank</div></div>
+          <div class="card"><div class="c-lbl">Savings Progress</div><div class="c-val" id="fov-savings">—</div><div class="c-sub">Goal: 1,000,000 EGP</div>
+            <div class="bar-track" style="margin-top:8px"><div class="bar-fill" id="fov-savings-bar" style="width:0%"></div></div></div>
+          <div class="card"><div class="c-lbl">This Month Revenue</div><div class="c-val" id="fov-rev">—</div><div class="c-sub" id="fov-rev-sub">from daily entries</div></div>
+        </div>
+        <div class="cards c4" style="margin-bottom:12px">
+          <div class="card"><div class="c-lbl">Orders (MTD)</div><div class="c-val" id="fov-orders">—</div><div class="c-sub">confirmed</div></div>
+          <div class="card"><div class="c-lbl">AOV (MTD)</div><div class="c-val" id="fov-aov">—</div><div class="c-sub">EGP avg order</div></div>
+          <div class="card"><div class="c-lbl">Meta Spend (MTD)</div><div class="c-val" id="fov-spend">—</div><div class="c-sub">EGP</div></div>
+          <div class="card"><div class="c-lbl">ROAS (MTD)</div><div class="c-val" id="fov-roas">—</div><div class="c-sub">target: ≥3×</div></div>
+        </div>
+        <div class="cards c3">
+          <div class="card"><div class="c-lbl">CPA (MTD)</div><div class="c-val" id="fov-cpa">—</div><div class="c-sub">ceiling: 255 EGP</div></div>
+          <div class="card"><div class="c-lbl">Break-even Orders</div><div class="c-val">333</div><div class="c-sub" id="fov-be">orders/month needed</div></div>
+          <div class="card"><div class="c-lbl">Total Expenses (Week)</div><div class="c-val" id="fov-exp">—</div><div class="c-sub">from journal</div></div>
+        </div>
+        <div style="margin-top:16px;background:var(--s);border:1px solid var(--b);border-radius:10px;padding:16px 18px">
+          <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:12px">LAST 7 ENTRIES</div>
+          <div class="tbl-wrap" style="margin:0"><table><thead><tr><th>Date</th><th>Revenue</th><th>Orders</th><th>AOV</th><th>Meta Spend</th><th>ROAS</th><th>Notes</th></tr></thead>
+          <tbody id="fov-table"><tr><td colspan="7" class="empty">Loading...</td></tr></tbody></table></div>
+        </div>
       </div>
-      <div class="briefing" style="margin-top:8px">
-        <div class="briefing-lbl">📊 Finance Summary</div>
-        <div class="briefing-txt" id="finTxt">Press Refresh to load finance data from your Google Sheets.</div>
+
+      <!-- ── DAILY INPUT ── -->
+      <div class="fin-panel" id="fp-daily">
+        <div class="fin-form">
+          <div class="fin-form-title">Daily CFO Entry</div>
+          <div class="form-grid fg3">
+            <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="di-date"></div>
+            <div class="form-group"><label class="form-label">Net Sales (EGP)</label><input class="form-input" type="number" id="di-sales" placeholder="0" oninput="diCalc()"></div>
+            <div class="form-group"><label class="form-label">Orders</label><input class="form-input" type="number" id="di-orders" placeholder="0" oninput="diCalc()"></div>
+          </div>
+          <div class="form-grid fg3">
+            <div class="form-group"><label class="form-label">Sessions</label><input class="form-input" type="number" id="di-sessions" placeholder="0" oninput="diCalc()"></div>
+            <div class="form-group"><label class="form-label">Meta Spend (EGP)</label><input class="form-input" type="number" id="di-spend" placeholder="0" oninput="diCalc()"></div>
+            <div class="form-group"><label class="form-label">Meta Purchases</label><input class="form-input" type="number" id="di-purchases" placeholder="0" oninput="diCalc()"></div>
+          </div>
+          <!-- AUTO CALCS -->
+          <div class="form-grid fg4" style="margin-bottom:14px">
+            <div class="form-group"><label class="form-label">AOV (auto)</label><div class="auto-tag" id="di-aov">—</div></div>
+            <div class="form-group"><label class="form-label">CPA (auto)</label><div class="auto-tag" id="di-cpa">—</div></div>
+            <div class="form-group"><label class="form-label">ROAS (auto)</label><div class="auto-tag" id="di-roas">—</div></div>
+            <div class="form-group"><label class="form-label">CVR% (auto)</label><div class="auto-tag" id="di-cvr">—</div></div>
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr">
+            <div class="form-group"><label class="form-label">Notes</label><input class="form-input" type="text" id="di-notes" placeholder="Anything unusual today?"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+            <button class="fin-submit" onclick="saveDailyEntry()" id="di-btn">Save Entry</button>
+            <div class="fin-success" id="di-ok">✓ Saved</div>
+          </div>
+        </div>
+        <div class="fin-hist-wrap">
+          <div class="fin-hist-hdr">Recent Entries</div>
+          <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Revenue</th><th>Orders</th><th>Sessions</th><th>CVR%</th><th>Meta Spend</th><th>AOV</th><th>CPA</th><th>ROAS</th><th>Notes</th></tr></thead>
+          <tbody id="di-hist"><tr><td colspan="10" class="empty">No entries yet</td></tr></tbody></table></div>
+        </div>
       </div>
+
+      <!-- ── CASH LOG ── -->
+      <div class="fin-panel" id="fp-cash">
+        <div class="fin-form">
+          <div class="fin-form-title">Delivery Payment Log</div>
+          <div class="form-grid fg3">
+            <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="cl-date"></div>
+            <div class="form-group"><label class="form-label">Delivery Company</label>
+              <select class="form-input" id="cl-company">
+                <option value="Two Way">Two Way</option>
+                <option value="EGY">EGY</option>
+                <option value="7 Trade">7 Trade</option>
+                <option value="Other">Other</option>
+              </select></div>
+            <div class="form-group"><label class="form-label">Cash Received (EGP)</label><input class="form-input" type="number" id="cl-amount" placeholder="0" oninput="clCalc()"></div>
+          </div>
+          <div class="form-grid fg3" style="margin-bottom:14px">
+            <div class="form-group"><label class="form-label">7% Savings (auto)</label><div class="auto-tag" id="cl-savings">—</div></div>
+            <div class="form-group"><label class="form-label">To Safe (auto)</label><div class="auto-tag" id="cl-tosafe">—</div></div>
+            <div class="form-group"><label class="form-label">Notes</label><input class="form-input" type="text" id="cl-notes" placeholder="Optional"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <button class="fin-submit" onclick="saveCashLog()">Save Entry</button>
+            <div class="fin-success" id="cl-ok">✓ Saved</div>
+          </div>
+        </div>
+        <div class="fin-hist-wrap">
+          <div class="fin-hist-hdr">Cash Log History</div>
+          <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Company</th><th>Cash Received</th><th>7% Savings</th><th>To Safe</th><th>Notes</th></tr></thead>
+          <tbody id="cl-hist"><tr><td colspan="6" class="empty">No entries yet</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ── SUPPLIERS ── -->
+      <div class="fin-panel" id="fp-suppliers">
+        <div class="fin-form">
+          <div class="fin-form-title">Supplier Payments (Wednesdays)</div>
+          <div class="form-grid fg3">
+            <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="sp-date"></div>
+            <div class="form-group"><label class="form-label">Paid To</label>
+              <select class="form-input" id="sp-supplier">
+                <option value="Fajr">Fajr</option>
+                <option value="Sameh">Sameh</option>
+                <option value="Abu Ra2ed">Abu Ra2ed</option>
+                <option value="Ahmed">Ahmed</option>
+                <option value="Elegant">Elegant</option>
+                <option value="Abo Madyan">Abo Madyan</option>
+                <option value="Yasmin">Yasmin</option>
+                <option value="Elattal">Elattal</option>
+                <option value="Triko">Triko</option>
+                <option value="Zamzam">Zamzam</option>
+                <option value="Jawish">Jawish</option>
+                <option value="Other">Other</option>
+              </select></div>
+            <div class="form-group"><label class="form-label">Amount (EGP)</label><input class="form-input" type="number" id="sp-amount" placeholder="0"></div>
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr;margin-bottom:14px">
+            <div class="form-group"><label class="form-label">Notes</label><input class="form-input" type="text" id="sp-notes" placeholder="Optional"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <button class="fin-submit" onclick="saveSupplier()">Save Payment</button>
+            <div class="fin-success" id="sp-ok">✓ Saved</div>
+          </div>
+        </div>
+        <div class="fin-hist-wrap">
+          <div class="fin-hist-hdr">Payment History</div>
+          <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Supplier</th><th>Amount (EGP)</th><th>Notes</th></tr></thead>
+          <tbody id="sp-hist"><tr><td colspan="4" class="empty">No entries yet</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ── DAILY JOURNAL ── -->
+      <div class="fin-panel" id="fp-journal">
+        <div class="fin-form">
+          <div class="fin-form-title">Daily Cash Journal — Morning Entry</div>
+          <div class="form-grid fg3">
+            <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="dj-date"></div>
+            <div class="form-group"><label class="form-label">Safe Balance (EGP)</label><input class="form-input" type="number" id="dj-safe" placeholder="0" oninput="djCalc()"></div>
+            <div class="form-group"><label class="form-label">Bank Balance (EGP)</label><input class="form-input" type="number" id="dj-bank" placeholder="0" oninput="djCalc()"></div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px"><label class="form-label">Total Cash (auto)</label><div class="auto-tag" id="dj-total" style="width:fit-content">—</div></div>
+          <div class="form-grid fg3">
+            <div class="form-group"><label class="form-label">Expense Description</label><input class="form-input" type="text" id="dj-expdesc" placeholder="What was spent?"></div>
+            <div class="form-group"><label class="form-label">Expense Amount (EGP)</label><input class="form-input" type="number" id="dj-expamt" placeholder="0"></div>
+            <div class="form-group"><label class="form-label">Ads Paid (EGP)</label><input class="form-input" type="number" id="dj-ads" placeholder="0"></div>
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr;margin-bottom:14px">
+            <div class="form-group"><label class="form-label">Notes</label><input class="form-input" type="text" id="dj-notes" placeholder="Anything to flag?"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <button class="fin-submit" onclick="saveJournal()">Save Entry</button>
+            <div class="fin-success" id="dj-ok">✓ Saved</div>
+          </div>
+        </div>
+        <div class="fin-hist-wrap">
+          <div class="fin-hist-hdr">Journal History</div>
+          <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Safe</th><th>Bank</th><th>Total</th><th>Expense</th><th>Amount</th><th>Ads</th><th>Notes</th></tr></thead>
+          <tbody id="dj-hist"><tr><td colspan="8" class="empty">No entries yet</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ── MONTHLY P&L ── -->
+      <div class="fin-panel" id="fp-pl">
+        <div class="fin-form">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+            <div class="form-group" style="flex:0">
+              <label class="form-label">Month</label>
+              <select class="form-input" id="pl-month" style="width:140px" onchange="loadPL()">
+                <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+                <option value="4">April</option><option value="5">May</option><option value="6" selected>June</option>
+                <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+                <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:0">
+              <label class="form-label">Year</label>
+              <input class="form-input" type="number" id="pl-year" value="2026" style="width:100px" onchange="loadPL()">
+            </div>
+            <div style="margin-top:20px;font-size:12px;color:var(--t3)">Auto-saved as you type</div>
+          </div>
+
+          <!-- REVENUE -->
+          <div class="pl-section">
+            <div class="pl-section-title">💰 Revenue</div>
+            <div class="form-grid fg2">
+              <div class="form-group"><label class="form-label">Online (Shopify)</label><input class="form-input" type="number" id="pl-online" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Booth / Kiosk</label><input class="form-input" type="number" id="pl-booth" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Shipping Income</label><input class="form-input" type="number" id="pl-shipping-in" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Other Revenue</label><input class="form-input" type="number" id="pl-other-rev" placeholder="0" oninput="plCalc()"></div>
+            </div>
+            <div class="pl-total"><span>Total Revenue</span><span class="auto-tag" id="pl-total-rev" style="font-size:14px">—</span></div>
+          </div>
+
+          <!-- COGS -->
+          <div class="pl-section">
+            <div class="pl-section-title">🏭 Cost of Goods Sold</div>
+            <div class="form-grid fg2">
+              <div class="form-group"><label class="form-label">Production / Fabric</label><input class="form-input" type="number" id="pl-prod" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Exchange Cost</label><input class="form-input" type="number" id="pl-exchange" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Discounts Given</label><input class="form-input" type="number" id="pl-discount" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Shipping + Failed Delivery</label><input class="form-input" type="number" id="pl-ship-fail" placeholder="0" oninput="plCalc()"></div>
+            </div>
+            <div class="pl-total"><span>Total COGS</span><span class="auto-tag" id="pl-total-cogs" style="font-size:14px">—</span></div>
+          </div>
+
+          <!-- G&A -->
+          <div class="pl-section">
+            <div class="pl-section-title">🏢 General & Admin</div>
+            <div class="form-grid fg2">
+              <div class="form-group"><label class="form-label">Payroll (all staff)</label><input class="form-input" type="number" id="pl-payroll" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Social Insurance</label><input class="form-input" type="number" id="pl-si" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Rent — Zayed</label><input class="form-input" type="number" id="pl-rent-z" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Rent — Showroom</label><input class="form-input" type="number" id="pl-rent-s" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Booth Rent</label><input class="form-input" type="number" id="pl-booth-rent" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Concierge / Utilities</label><input class="form-input" type="number" id="pl-concierge" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Operating Expenses</label><input class="form-input" type="number" id="pl-operating" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Sadaqa</label><input class="form-input" type="number" id="pl-sadaqa" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">General Expenses</label><input class="form-input" type="number" id="pl-general" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Banking / Legal</label><input class="form-input" type="number" id="pl-banking" placeholder="0" oninput="plCalc()"></div>
+            </div>
+            <div class="pl-total"><span>Total G&A</span><span class="auto-tag" id="pl-total-ga" style="font-size:14px">—</span></div>
+          </div>
+
+          <!-- MARKETING -->
+          <div class="pl-section">
+            <div class="pl-section-title">📣 Marketing</div>
+            <div class="form-grid fg2">
+              <div class="form-group"><label class="form-label">Meta Ads</label><input class="form-input" type="number" id="pl-meta" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Photo / Video Shoots</label><input class="form-input" type="number" id="pl-shoots" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Website</label><input class="form-input" type="number" id="pl-website" placeholder="0" oninput="plCalc()"></div>
+              <div class="form-group"><label class="form-label">Bloggers / Influencers</label><input class="form-input" type="number" id="pl-bloggers" placeholder="0" oninput="plCalc()"></div>
+            </div>
+            <div class="pl-total"><span>Total Marketing</span><span class="auto-tag" id="pl-total-mkt" style="font-size:14px">—</span></div>
+          </div>
+
+          <!-- P&L SUMMARY -->
+          <div style="background:var(--s2);border:1px solid var(--b);border-radius:10px;padding:16px 18px;margin-top:4px">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+              <div><div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px">Gross Profit</div>
+                <div class="auto-tag" id="pl-gross" style="font-size:15px">—</div>
+                <div style="font-size:11px;color:var(--t3);margin-top:4px">Rev − COGS</div></div>
+              <div><div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px">Total Expenses</div>
+                <div class="auto-tag" id="pl-expenses" style="font-size:15px">—</div>
+                <div style="font-size:11px;color:var(--t3);margin-top:4px">COGS + G&A + Mkt</div></div>
+              <div><div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px">Net Profit / Loss</div>
+                <div class="auto-tag" id="pl-net" style="font-size:15px;color:var(--green)">—</div>
+                <div style="font-size:11px;color:var(--t3);margin-top:4px" id="pl-margin-pct"></div></div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top:16px;margin-bottom:14px">
+            <label class="form-label">Notes</label>
+            <input class="form-input" type="text" id="pl-notes" placeholder="Month notes...">
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <button class="fin-submit" onclick="savePL()">Save P&L</button>
+            <div class="fin-success" id="pl-ok">✓ Saved</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── AD SPEND WEEKLY ── -->
+      <div class="fin-panel" id="fp-adspend">
+        <div class="fin-form">
+          <div class="fin-form-title">Weekly Meta Ad Spend Tracker</div>
+          <div class="form-grid fg2">
+            <div class="form-group"><label class="form-label">Week Start</label><input class="form-input" type="date" id="as-start" oninput="asCalc()"></div>
+            <div class="form-group"><label class="form-label">Week End</label><input class="form-input" type="date" id="as-end"></div>
+          </div>
+          <div class="form-grid fg3">
+            <div class="form-group"><label class="form-label">Total Spend (EGP)</label><input class="form-input" type="number" id="as-spend" placeholder="0" oninput="asCalc()"></div>
+            <div class="form-group"><label class="form-label">Purchases</label><input class="form-input" type="number" id="as-purchases" placeholder="0" oninput="asCalc()"></div>
+            <div class="form-group"><label class="form-label">Gross Sales (EGP)</label><input class="form-input" type="number" id="as-sales" placeholder="0" oninput="asCalc()"></div>
+          </div>
+          <div class="form-grid fg3" style="margin-bottom:14px">
+            <div class="form-group"><label class="form-label">CPA (auto)</label><div class="auto-tag" id="as-cpa">—</div></div>
+            <div class="form-group"><label class="form-label">ROAS (auto)</label><div class="auto-tag" id="as-roas">—</div></div>
+            <div class="form-group"><label class="form-label">Verdict</label>
+              <select class="verdict-sel" id="as-verdict">
+                <option value="Scale">📈 Scale</option>
+                <option value="Hold" selected>⏸ Hold</option>
+                <option value="Cut">✂️ Cut</option>
+              </select></div>
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr;margin-bottom:14px">
+            <div class="form-group"><label class="form-label">Notes</label><input class="form-input" type="text" id="as-notes" placeholder="What drove performance this week?"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <button class="fin-submit" onclick="saveAdSpend()">Save Week</button>
+            <div class="fin-success" id="as-ok">✓ Saved</div>
+          </div>
+        </div>
+        <div class="fin-hist-wrap">
+          <div class="fin-hist-hdr">Weekly Ad Spend History</div>
+          <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Spend</th><th>Purchases</th><th>CPA</th><th>Gross Sales</th><th>ROAS</th><th>Verdict</th></tr></thead>
+          <tbody id="as-hist"><tr><td colspan="7" class="empty">No entries yet</td></tr></tbody></table></div>
+        </div>
+      </div>
+
     </div>
 
     <!-- TODAY -->
@@ -661,17 +986,6 @@ function render(d) {
   document.getElementById('m-reach').textContent = fmt(m.reach);
   renderCampaigns(m.campaigns || []);
 
-  // ── Finance page ──
-  document.getElementById('f-profit').textContent = fmt(f.profit);
-  document.getElementById('f-cash').textContent   = fmt(f.cash);
-  document.getElementById('f-float').textContent  = fmt(f.float);
-  document.getElementById('f-ads').textContent    = fmt(f.adspend);
-  document.getElementById('f-cogs').textContent   = fmtPct(f.cogs);
-  document.getElementById('f-margin').textContent = fmtPct(f.margin);
-  if (d.fin_summary) {
-    document.getElementById('finTxt').innerHTML =
-      d.fin_summary.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  }
 }
 
 function render7DayChart(days) {
@@ -879,6 +1193,466 @@ function renderTeam() {
     </div>`).join('');
 }
 
+// ── SUPABASE FINANCE ──────────────────────────────────────────────────────
+const SUPA_URL  = 'https://vvwsqjygrnkmueeruqvx.supabase.co';
+const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2d3Nxanlncm5rbXVlZXJ1cXZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTY1NzQsImV4cCI6MjA5Nzg3MjU3NH0.YcLJl1U47sbxk3mD-CfRZPndumSLnFpkGb-GMa2D_oE';
+
+async function sbFetch(table, opts = {}) {
+  const { method = 'GET', body, select = '*', filters = [], order = 'created_at.desc', limit = 20 } = opts;
+  let url = `${SUPA_URL}/rest/v1/${table}?select=${select}&order=${order}&limit=${limit}`;
+  filters.forEach(f => { url += `&${f}`; });
+  const res = await fetch(url, {
+    method,
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': `Bearer ${SUPA_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=minimal,resolution=merge-duplicates' : 'return=representation'
+    },
+    ...(body ? { body: JSON.stringify(body) } : {})
+  });
+  if (!res.ok) { const e = await res.text(); throw new Error(e); }
+  return method === 'GET' ? res.json() : res;
+}
+
+async function sbUpsert(table, body) {
+  const url = `${SUPA_URL}/rest/v1/${table}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': `Bearer ${SUPA_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal,resolution=merge-duplicates'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) { const e = await res.text(); throw new Error(e); }
+  return res;
+}
+
+// Sub-tab navigation
+function finTab(id, btn) {
+  document.querySelectorAll('.ftab').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.fin-panel').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('fp-' + id).classList.add('on');
+  if (id === 'overview') loadFinOverview();
+  if (id === 'daily')    loadDailyHist();
+  if (id === 'cash')     loadCashHist();
+  if (id === 'suppliers') loadSupplierHist();
+  if (id === 'journal')  loadJournalHist();
+  if (id === 'adspend')  loadAdSpendHist();
+}
+
+// ── AUTO-CALCS ──
+function n(id) { return parseFloat(document.getElementById(id)?.value) || 0; }
+function setAuto(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+function diCalc() {
+  const sales = n('di-sales'), orders = n('di-orders'), sessions = n('di-sessions'),
+        spend = n('di-spend'), purch = n('di-purchases');
+  setAuto('di-aov',  orders > 0 ? fmt(Math.round(sales / orders)) + ' EGP' : '—');
+  setAuto('di-cpa',  purch  > 0 ? fmt(Math.round(spend / purch))  + ' EGP' : '—');
+  setAuto('di-roas', spend  > 0 ? (sales / spend).toFixed(2) + '×'          : '—');
+  setAuto('di-cvr',  sessions > 0 ? ((orders / sessions) * 100).toFixed(2) + '%' : '—');
+}
+function clCalc() {
+  const amt = n('cl-amount');
+  setAuto('cl-savings', amt > 0 ? fmt(Math.round(amt * 0.07)) + ' EGP' : '—');
+  setAuto('cl-tosafe',  amt > 0 ? fmt(Math.round(amt * 0.93)) + ' EGP' : '—');
+}
+function djCalc() {
+  const safe = n('dj-safe'), bank = n('dj-bank');
+  setAuto('dj-total', (safe + bank) > 0 ? fmt(safe + bank) + ' EGP' : '—');
+}
+function asCalc() {
+  const spend = n('as-spend'), purch = n('as-purchases'), sales = n('as-sales');
+  // auto week-end: 6 days after start
+  const startEl = document.getElementById('as-start');
+  const endEl   = document.getElementById('as-end');
+  if (startEl?.value && !endEl?.value) {
+    const d = new Date(startEl.value); d.setDate(d.getDate() + 6);
+    endEl.value = d.toISOString().slice(0, 10);
+  }
+  setAuto('as-cpa',  purch > 0 ? fmt(Math.round(spend / purch)) + ' EGP' : '—');
+  setAuto('as-roas', spend > 0 ? (sales / spend).toFixed(2) + '×'         : '—');
+  // Auto-set verdict
+  const roas = spend > 0 ? sales / spend : 0;
+  const cpa  = purch > 0 ? spend / purch : 0;
+  const sel  = document.getElementById('as-verdict');
+  if (sel) {
+    if (roas >= 3.5 && cpa <= 255) sel.value = 'Scale';
+    else if (roas < 2 || cpa > 400) sel.value = 'Cut';
+    else sel.value = 'Hold';
+  }
+}
+function plCalc() {
+  const rev   = n('pl-online') + n('pl-booth') + n('pl-shipping-in') + n('pl-other-rev');
+  const cogs  = n('pl-prod') + n('pl-exchange') + n('pl-discount') + n('pl-ship-fail');
+  const ga    = n('pl-payroll') + n('pl-si') + n('pl-rent-z') + n('pl-rent-s') +
+                n('pl-booth-rent') + n('pl-concierge') + n('pl-operating') + n('pl-sadaqa') +
+                n('pl-general') + n('pl-banking');
+  const mkt   = n('pl-meta') + n('pl-shoots') + n('pl-website') + n('pl-bloggers');
+  const gross = rev - cogs;
+  const net   = gross - ga - mkt;
+  const margin = rev > 0 ? ((net / rev) * 100).toFixed(1) : 0;
+
+  setAuto('pl-total-rev',  fmt(rev)   + ' EGP');
+  setAuto('pl-total-cogs', fmt(cogs)  + ' EGP');
+  setAuto('pl-total-ga',   fmt(ga)    + ' EGP');
+  setAuto('pl-total-mkt',  fmt(mkt)   + ' EGP');
+  setAuto('pl-gross',      fmt(gross) + ' EGP');
+  setAuto('pl-expenses',   fmt(cogs + ga + mkt) + ' EGP');
+  const netEl = document.getElementById('pl-net');
+  if (netEl) {
+    netEl.textContent = fmt(Math.round(net)) + ' EGP';
+    netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+  const pctEl = document.getElementById('pl-margin-pct');
+  if (pctEl) pctEl.textContent = `${margin}% net margin`;
+}
+
+// ── SAVE FUNCTIONS ──
+function showOk(id) {
+  const el = document.getElementById(id);
+  el.style.display = 'flex'; el.style.display = 'inline-flex';
+  setTimeout(() => { el.style.display = 'none'; }, 2500);
+}
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+async function saveDailyEntry() {
+  const btn = document.getElementById('di-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const date  = document.getElementById('di-date').value || todayStr();
+    const sales = n('di-sales'), orders = n('di-orders'), sessions = n('di-sessions'),
+          spend = n('di-spend'), purch = n('di-purchases');
+    await sbUpsert('daily_entries', {
+      date, net_sales: sales, orders, sessions,
+      meta_spend: spend, meta_purchases: purch,
+      notes: document.getElementById('di-notes').value || '',
+      updated_at: new Date().toISOString()
+    });
+    showOk('di-ok');
+    loadDailyHist();
+    loadFinOverview();
+  } catch(e) { alert('Error: ' + e.message); }
+  btn.disabled = false; btn.textContent = 'Save Entry';
+}
+
+async function saveCashLog() {
+  try {
+    await sbUpsert('cash_log', {
+      date: document.getElementById('cl-date').value || todayStr(),
+      delivery_company: document.getElementById('cl-company').value,
+      cash_received: n('cl-amount'),
+      notes: document.getElementById('cl-notes').value || ''
+    });
+    showOk('cl-ok');
+    ['cl-amount','cl-notes'].forEach(id => document.getElementById(id).value = '');
+    clCalc(); loadCashHist(); loadFinOverview();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function saveSupplier() {
+  try {
+    await sbUpsert('supplier_payments', {
+      date: document.getElementById('sp-date').value || todayStr(),
+      paid_to: document.getElementById('sp-supplier').value,
+      amount: n('sp-amount'),
+      notes: document.getElementById('sp-notes').value || ''
+    });
+    showOk('sp-ok');
+    ['sp-amount','sp-notes'].forEach(id => document.getElementById(id).value = '');
+    loadSupplierHist();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function saveJournal() {
+  try {
+    await sbUpsert('daily_journal', {
+      date: document.getElementById('dj-date').value || todayStr(),
+      safe_balance: n('dj-safe'),
+      bank_balance: n('dj-bank'),
+      expense_description: document.getElementById('dj-expdesc').value || '',
+      expense_amount: n('dj-expamt'),
+      ads_paid: n('dj-ads'),
+      notes: document.getElementById('dj-notes').value || '',
+      updated_at: new Date().toISOString()
+    });
+    showOk('dj-ok');
+    loadJournalHist(); loadFinOverview();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function saveAdSpend() {
+  try {
+    await sbUpsert('ad_spend_weekly', {
+      week_start: document.getElementById('as-start').value,
+      week_end:   document.getElementById('as-end').value,
+      total_spend: n('as-spend'),
+      purchases:  n('as-purchases'),
+      gross_sales: n('as-sales'),
+      verdict: document.getElementById('as-verdict').value,
+      notes: document.getElementById('as-notes').value || ''
+    });
+    showOk('as-ok');
+    loadAdSpendHist();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function savePL() {
+  try {
+    await sbUpsert('monthly_pl', {
+      month: parseInt(document.getElementById('pl-month').value),
+      year:  parseInt(document.getElementById('pl-year').value),
+      online_revenue: n('pl-online'), booth_sales: n('pl-booth'),
+      shipping_income: n('pl-shipping-in'), other_revenue: n('pl-other-rev'),
+      production_cogs: n('pl-prod'), exchange_cost: n('pl-exchange'),
+      discount_cost: n('pl-discount'), shipping_failed_cost: n('pl-ship-fail'),
+      payroll: n('pl-payroll'), social_insurance: n('pl-si'),
+      rent_zayed: n('pl-rent-z'), rent_showroom: n('pl-rent-s'),
+      booth_rent: n('pl-booth-rent'), concierge: n('pl-concierge'),
+      operating_expenses: n('pl-operating'), sadaqa: n('pl-sadaqa'),
+      general_expenses: n('pl-general'), banking_legal: n('pl-banking'),
+      meta_ads_spend: n('pl-meta'), shoots: n('pl-shoots'),
+      website_costs: n('pl-website'), bloggers: n('pl-bloggers'),
+      notes: document.getElementById('pl-notes').value || ''
+    });
+    showOk('pl-ok');
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ── LOAD / RENDER HISTORY ──
+async function loadDailyHist() {
+  try {
+    const rows = await sbFetch('daily_entries', { order: 'date.desc', limit: 20 });
+    const tb = document.getElementById('di-hist');
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" class="empty">No entries yet</td></tr>'; return; }
+    tb.innerHTML = rows.map(r => {
+      const aov  = r.orders > 0 ? fmt(Math.round(r.net_sales / r.orders)) : '—';
+      const cpa  = r.meta_purchases > 0 ? fmt(Math.round(r.meta_spend / r.meta_purchases)) : '—';
+      const roas = r.meta_spend > 0 ? (r.net_sales / r.meta_spend).toFixed(2) + '×' : '—';
+      const cvr  = r.sessions > 0 ? ((r.orders / r.sessions) * 100).toFixed(1) + '%' : '—';
+      return `<tr>
+        <td>${r.date}</td>
+        <td class="mono gold">${fmt(r.net_sales)}</td>
+        <td class="mono">${r.orders}</td>
+        <td class="mono">${r.sessions || '—'}</td>
+        <td class="mono">${cvr}</td>
+        <td class="mono">${fmt(r.meta_spend)}</td>
+        <td class="mono">${aov}</td>
+        <td class="mono" style="color:${r.meta_purchases > 0 && r.meta_spend / r.meta_purchases > 255 ? 'var(--red)' : 'inherit'}">${cpa}</td>
+        <td class="mono" style="color:${r.meta_spend > 0 && r.net_sales / r.meta_spend >= 3 ? 'var(--green)' : 'var(--yellow)'}">${roas}</td>
+        <td style="color:var(--t3)">${r.notes || ''}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function loadCashHist() {
+  try {
+    const rows = await sbFetch('cash_log', { order: 'date.desc', limit: 20 });
+    const tb = document.getElementById('cl-hist');
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">No entries yet</td></tr>'; return; }
+    tb.innerHTML = rows.map(r => `<tr>
+      <td>${r.date}</td>
+      <td>${r.delivery_company}</td>
+      <td class="mono gold">${fmt(r.cash_received)}</td>
+      <td class="mono" style="color:var(--green)">${fmt(Math.round(r.cash_received * 0.07))}</td>
+      <td class="mono">${fmt(Math.round(r.cash_received * 0.93))}</td>
+      <td style="color:var(--t3)">${r.notes || ''}</td>
+    </tr>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function loadSupplierHist() {
+  try {
+    const rows = await sbFetch('supplier_payments', { order: 'date.desc', limit: 20 });
+    const tb = document.getElementById('sp-hist');
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">No entries yet</td></tr>'; return; }
+    tb.innerHTML = rows.map(r => `<tr>
+      <td>${r.date}</td>
+      <td>${r.paid_to}</td>
+      <td class="mono gold">${fmt(r.amount)}</td>
+      <td style="color:var(--t3)">${r.notes || ''}</td>
+    </tr>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function loadJournalHist() {
+  try {
+    const rows = await sbFetch('daily_journal', { order: 'date.desc', limit: 20 });
+    const tb = document.getElementById('dj-hist');
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">No entries yet</td></tr>'; return; }
+    tb.innerHTML = rows.map(r => `<tr>
+      <td>${r.date}</td>
+      <td class="mono">${fmt(r.safe_balance)}</td>
+      <td class="mono">${fmt(r.bank_balance)}</td>
+      <td class="mono gold">${fmt(r.safe_balance + r.bank_balance)}</td>
+      <td style="color:var(--t2)">${r.expense_description || '—'}</td>
+      <td class="mono" style="color:${r.expense_amount > 0 ? 'var(--red)' : 'inherit'}">${r.expense_amount > 0 ? fmt(r.expense_amount) : '—'}</td>
+      <td class="mono">${r.ads_paid > 0 ? fmt(r.ads_paid) : '—'}</td>
+      <td style="color:var(--t3)">${r.notes || ''}</td>
+    </tr>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function loadAdSpendHist() {
+  try {
+    const rows = await sbFetch('ad_spend_weekly', { order: 'week_start.desc', limit: 20 });
+    const tb = document.getElementById('as-hist');
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">No entries yet</td></tr>'; return; }
+    tb.innerHTML = rows.map(r => {
+      const cpa  = r.purchases > 0 ? fmt(Math.round(r.total_spend / r.purchases)) : '—';
+      const roas = r.total_spend > 0 ? (r.gross_sales / r.total_spend).toFixed(2) + '×' : '—';
+      const vColor = r.verdict === 'Scale' ? 'var(--green)' : r.verdict === 'Cut' ? 'var(--red)' : 'var(--yellow)';
+      return `<tr>
+        <td>${r.week_start} → ${r.week_end}</td>
+        <td class="mono gold">${fmt(r.total_spend)}</td>
+        <td class="mono">${r.purchases}</td>
+        <td class="mono">${cpa}</td>
+        <td class="mono">${fmt(r.gross_sales)}</td>
+        <td class="mono" style="color:var(--green)">${roas}</td>
+        <td><span style="color:${vColor};font-weight:600">${r.verdict}</span></td>
+      </tr>`;
+    }).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function loadPL() {
+  const month = parseInt(document.getElementById('pl-month')?.value) || new Date().getMonth() + 1;
+  const year  = parseInt(document.getElementById('pl-year')?.value)  || 2026;
+  try {
+    const rows = await sbFetch('monthly_pl', {
+      filters: [`month=eq.${month}`, `year=eq.${year}`], limit: 1
+    });
+    if (!rows.length) {
+      // Clear all fields
+      ['pl-online','pl-booth','pl-shipping-in','pl-other-rev','pl-prod','pl-exchange',
+       'pl-discount','pl-ship-fail','pl-payroll','pl-si','pl-rent-z','pl-rent-s',
+       'pl-booth-rent','pl-concierge','pl-operating','pl-sadaqa','pl-general','pl-banking',
+       'pl-meta','pl-shoots','pl-website','pl-bloggers','pl-notes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = id === 'pl-notes' ? '' : '';
+       });
+      plCalc(); return;
+    }
+    const r = rows[0];
+    const map = {
+      'pl-online': r.online_revenue, 'pl-booth': r.booth_sales,
+      'pl-shipping-in': r.shipping_income, 'pl-other-rev': r.other_revenue,
+      'pl-prod': r.production_cogs, 'pl-exchange': r.exchange_cost,
+      'pl-discount': r.discount_cost, 'pl-ship-fail': r.shipping_failed_cost,
+      'pl-payroll': r.payroll, 'pl-si': r.social_insurance,
+      'pl-rent-z': r.rent_zayed, 'pl-rent-s': r.rent_showroom,
+      'pl-booth-rent': r.booth_rent, 'pl-concierge': r.concierge,
+      'pl-operating': r.operating_expenses, 'pl-sadaqa': r.sadaqa,
+      'pl-general': r.general_expenses, 'pl-banking': r.banking_legal,
+      'pl-meta': r.meta_ads_spend, 'pl-shoots': r.shoots,
+      'pl-website': r.website_costs, 'pl-bloggers': r.bloggers,
+      'pl-notes': r.notes
+    };
+    Object.entries(map).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) el.value = (val && val !== 0) ? val : '';
+    });
+    plCalc();
+  } catch(e) { console.error(e); }
+}
+
+async function loadFinOverview() {
+  try {
+    // This month's daily entries
+    const now = new Date();
+    const monthStart = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+    const [daily, journal, cash] = await Promise.all([
+      sbFetch('daily_entries', { order: 'date.desc', limit: 50, filters: [`date=gte.${monthStart}`] }),
+      sbFetch('daily_journal', { order: 'date.desc', limit: 7 }),
+      sbFetch('cash_log', { order: 'date.desc', limit: 100, filters: [`date=gte.${monthStart}`] })
+    ]);
+
+    // MTD calcs
+    const mtdRev    = daily.reduce((s, r) => s + (r.net_sales || 0), 0);
+    const mtdOrders = daily.reduce((s, r) => s + (r.orders || 0), 0);
+    const mtdSpend  = daily.reduce((s, r) => s + (r.meta_spend || 0), 0);
+    const aov       = mtdOrders > 0 ? Math.round(mtdRev / mtdOrders) : 0;
+    const roas      = mtdSpend > 0 ? (mtdRev / mtdSpend).toFixed(2) : 0;
+    const cpa       = mtdOrders > 0 ? Math.round(mtdSpend / mtdOrders) : 0;
+
+    // Cash from journal
+    const latestJournal = journal[0];
+    const safe  = latestJournal?.safe_balance  || 0;
+    const bank  = latestJournal?.bank_balance  || 0;
+    const total = safe + bank;
+
+    // Savings (7% of all cash receipts this month)
+    const mtdCash   = cash.reduce((s, r) => s + (r.cash_received || 0), 0);
+    const mtdSavings = Math.round(mtdCash * 0.07);
+
+    // Weekly expenses
+    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+    const wkExpenses = journal.reduce((s, r) => s + (r.expense_amount || 0), 0);
+
+    // Update DOM
+    document.getElementById('fov-cash').textContent     = fmt(total);
+    document.getElementById('fov-cash-sub').textContent = `Safe ${fmt(safe)} + Bank ${fmt(bank)}`;
+    document.getElementById('fov-savings').textContent  = fmt(mtdSavings);
+    const savPct = Math.min((mtdSavings / 1000000) * 100, 100);
+    document.getElementById('fov-savings-bar').style.width = savPct + '%';
+    document.getElementById('fov-rev').textContent     = fmt(mtdRev);
+    document.getElementById('fov-rev-sub').textContent = `${daily.length} days this month`;
+    document.getElementById('fov-orders').textContent  = mtdOrders;
+    document.getElementById('fov-aov').textContent     = aov > 0 ? fmt(aov) : '—';
+    document.getElementById('fov-spend').textContent   = fmt(mtdSpend);
+    const roasEl = document.getElementById('fov-roas');
+    roasEl.textContent = roas > 0 ? roas + '×' : '—';
+    roasEl.style.color = roas >= 3 ? 'var(--green)' : roas > 0 ? 'var(--yellow)' : 'var(--t)';
+    const cpaEl = document.getElementById('fov-cpa');
+    cpaEl.textContent = cpa > 0 ? fmt(cpa) : '—';
+    cpaEl.style.color = cpa > 255 ? 'var(--red)' : cpa > 0 ? 'var(--green)' : 'var(--t)';
+    document.getElementById('fov-exp').textContent = fmt(wkExpenses);
+    document.getElementById('fov-be').textContent  = `${mtdOrders} / 333 this month`;
+
+    // Render overview table (last 7 entries)
+    const last7 = (await sbFetch('daily_entries', { order: 'date.desc', limit: 7 }));
+    const tb = document.getElementById('fov-table');
+    if (!last7.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">No entries yet — add your first daily entry</td></tr>'; return; }
+    tb.innerHTML = last7.map(r => {
+      const aov  = r.orders > 0 ? fmt(Math.round(r.net_sales / r.orders)) : '—';
+      const roas = r.meta_spend > 0 ? (r.net_sales / r.meta_spend).toFixed(2) + '×' : '—';
+      return `<tr>
+        <td>${r.date}</td>
+        <td class="mono gold">${fmt(r.net_sales)} EGP</td>
+        <td class="mono">${r.orders}</td>
+        <td class="mono">${aov} EGP</td>
+        <td class="mono">${fmt(r.meta_spend)} EGP</td>
+        <td class="mono" style="color:var(--green)">${roas}</td>
+        <td style="color:var(--t3)">${r.notes || ''}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) { console.error('Finance overview error:', e); }
+}
+
+// ── INIT FINANCE DATES ──
+function initFinanceDates() {
+  const t = todayStr();
+  ['di-date','cl-date','sp-date','dj-date'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = t;
+  });
+  // Week start = last Monday
+  const now = new Date();
+  const day = now.getDay();
+  const diff = (day === 0 ? -6 : 1 - day);
+  const monday = new Date(now); monday.setDate(now.getDate() + diff);
+  const asStart = document.getElementById('as-start');
+  if (asStart) asStart.value = monday.toISOString().slice(0, 10);
+}
+
+// ── INIT FINANCE ──────────────────────────────────────────────────────────
 // ── INIT ──────────────────────────────────────────────────────────────────
 (function init() {
   const now = new Date();
@@ -893,6 +1667,9 @@ function renderTeam() {
   renderTeam();
   updateTodoBadge();
   renderUrgentTasks();
+  initFinanceDates();
+  loadFinOverview();
+  loadPL();
 })();
 </script>
 </body>
