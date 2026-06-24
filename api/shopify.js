@@ -17,8 +17,8 @@ module.exports = async function handler(req, res) {
   const BASE = `https://${STORE}/admin/api/2024-04`;
   const HDRS = { 'X-Shopify-Access-Token': TOKEN, 'Content-Type': 'application/json' };
 
-  // Cairo is UTC+2 (no DST since 2011)
-  const CAIRO_MS = 2 * 60 * 60 * 1000;
+  // Shopify store timezone is UTC+3 (matches Shopify Analytics day boundaries)
+  const CAIRO_MS = 3 * 60 * 60 * 1000;
 
   function cairoDateKey(utcMs) {
     // Returns "YYYY-MM-DD" in Cairo local time
