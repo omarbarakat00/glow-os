@@ -98,6 +98,8 @@ td:first-child{color:var(--t);font-weight:500}
 .edit-row-btn{background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:4px;transition:all .15s;opacity:0}
 tr:hover .edit-row-btn{opacity:1}
 .edit-row-btn:hover{color:var(--gold);background:rgba(201,169,110,.1)}
+.add-option-btn{background:none;border:none;color:var(--gold);font-size:10px;font-weight:600;cursor:pointer;letter-spacing:.04em;padding:0;opacity:.7;transition:opacity .15s}
+.add-option-btn:hover{opacity:1}
 
 /* TODO */
 .todo-row{display:flex;gap:8px;margin-bottom:14px}
@@ -504,13 +506,8 @@ tr:hover .edit-row-btn{opacity:1}
           <div class="fin-form-title">Delivery Payment Log</div>
           <div class="form-grid fg3">
             <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="cl-date"></div>
-            <div class="form-group"><label class="form-label">Delivery Company</label>
-              <select class="form-input" id="cl-company">
-                <option value="Two Way">Two Way</option>
-                <option value="EGY">EGY</option>
-                <option value="7 Trade">7 Trade</option>
-                <option value="Other">Other</option>
-              </select></div>
+            <div class="form-group"><label class="form-label" style="display:flex;align-items:center;justify-content:space-between">Delivery Company <button type="button" class="add-option-btn" onclick="addDeliveryCompany()">+ Add</button></label>
+              <select class="form-input" id="cl-company"></select></div>
             <div class="form-group"><label class="form-label">Cash Received (EGP)</label><input class="form-input" type="number" id="cl-amount" placeholder="0" oninput="clCalc()"></div>
           </div>
           <div class="form-grid fg3" style="margin-bottom:14px">
@@ -539,21 +536,8 @@ tr:hover .edit-row-btn{opacity:1}
           <div class="fin-form-title">Supplier Payments (Wednesdays)</div>
           <div class="form-grid fg3">
             <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="sp-date"></div>
-            <div class="form-group"><label class="form-label">Paid To</label>
-              <select class="form-input" id="sp-supplier">
-                <option value="Fajr">Fajr</option>
-                <option value="Sameh">Sameh</option>
-                <option value="Abu Ra2ed">Abu Ra2ed</option>
-                <option value="Ahmed">Ahmed</option>
-                <option value="Elegant">Elegant</option>
-                <option value="Abo Madyan">Abo Madyan</option>
-                <option value="Yasmin">Yasmin</option>
-                <option value="Elattal">Elattal</option>
-                <option value="Triko">Triko</option>
-                <option value="Zamzam">Zamzam</option>
-                <option value="Jawish">Jawish</option>
-                <option value="Other">Other</option>
-              </select></div>
+            <div class="form-group"><label class="form-label" style="display:flex;align-items:center;justify-content:space-between">Paid To <button type="button" class="add-option-btn" onclick="addSupplierName()">+ Add</button></label>
+              <select class="form-input" id="sp-supplier"></select></div>
             <div class="form-group"><label class="form-label">Amount (EGP)</label><input class="form-input" type="number" id="sp-amount" placeholder="0"></div>
           </div>
           <div class="form-grid" style="grid-template-columns:1fr;margin-bottom:14px">
@@ -1267,6 +1251,48 @@ function finTab(id, btn) {
 function n(id) { return parseFloat(document.getElementById(id)?.value) || 0; }
 function setAuto(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 
+// ── DYNAMIC DROPDOWNS ──
+const DEFAULT_COMPANIES  = ['Two Way', 'EGY', '7 Trade'];
+const DEFAULT_SUPPLIERS  = ['Fajr', 'Sameh', 'Abu Ra2ed', 'Ahmed', 'Elegant', 'Abo Madyan', 'Yasmin', 'Elattal', 'Triko', 'Zamzam', 'Jawish'];
+
+function getCompanies()  { return JSON.parse(localStorage.getItem('glow_companies')  || 'null') || DEFAULT_COMPANIES; }
+function getSuppliers()  { return JSON.parse(localStorage.getItem('glow_suppliers')  || 'null') || DEFAULT_SUPPLIERS; }
+
+function populateSelect(id, items) {
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = items.map(n => `<option value="${n}">${n}</option>`).join('');
+  if (cur && items.includes(cur)) sel.value = cur;
+}
+
+function initDropdowns() {
+  populateSelect('cl-company', getCompanies());
+  populateSelect('sp-supplier', getSuppliers());
+}
+
+function addDeliveryCompany() {
+  const name = prompt('New delivery company name:')?.trim();
+  if (!name) return;
+  const list = getCompanies();
+  if (list.includes(name)) { alert('Already exists.'); return; }
+  list.push(name);
+  localStorage.setItem('glow_companies', JSON.stringify(list));
+  populateSelect('cl-company', list);
+  document.getElementById('cl-company').value = name;
+}
+
+function addSupplierName() {
+  const name = prompt('New supplier name:')?.trim();
+  if (!name) return;
+  const list = getSuppliers();
+  if (list.includes(name)) { alert('Already exists.'); return; }
+  list.push(name);
+  localStorage.setItem('glow_suppliers', JSON.stringify(list));
+  populateSelect('sp-supplier', list);
+  document.getElementById('sp-supplier').value = name;
+}
+
 function diCalc() {
   const sales = n('di-sales'), orders = n('di-orders'), sessions = n('di-sessions'),
         spend = n('di-spend'), purch = n('di-purchases');
@@ -1491,6 +1517,10 @@ function editDailyEntry(r) {
 }
 function editCashEntry(r) {
   document.getElementById('cl-date').value    = r.date;
+  // ensure company is in list (could be an old value)
+  const cos = getCompanies();
+  if (!cos.includes(r.delivery_company)) { cos.push(r.delivery_company); localStorage.setItem('glow_companies', JSON.stringify(cos)); }
+  populateSelect('cl-company', cos);
   document.getElementById('cl-company').value = r.delivery_company;
   document.getElementById('cl-amount').value  = r.cash_received;
   document.getElementById('cl-notes').value   = r.notes || '';
@@ -1499,6 +1529,9 @@ function editCashEntry(r) {
 }
 function editSupplierEntry(r) {
   document.getElementById('sp-date').value     = r.date;
+  const sups = getSuppliers();
+  if (!sups.includes(r.paid_to)) { sups.push(r.paid_to); localStorage.setItem('glow_suppliers', JSON.stringify(sups)); }
+  populateSelect('sp-supplier', sups);
   document.getElementById('sp-supplier').value = r.paid_to;
   document.getElementById('sp-amount').value   = r.amount;
   document.getElementById('sp-notes').value    = r.notes || '';
@@ -1773,6 +1806,7 @@ function initFinanceDates() {
   updateTodoBadge();
   renderUrgentTasks();
   initFinanceDates();
+  initDropdowns();
   loadFinOverview();
   loadPL();
 })();
