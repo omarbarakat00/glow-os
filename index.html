@@ -2087,7 +2087,15 @@ async function syncFromShopifyMeta() {
     if (ordToday) document.getElementById('di-orders').value = ordToday;
 
     // Sessions
-    if (shopify.sessions_today) document.getElementById('di-sessions').value = shopify.sessions_today;
+    if (shopify.sessions_today > 0) {
+      document.getElementById('di-sessions').value = shopify.sessions_today;
+    } else if (shopify.sessions_debug) {
+      console.warn('Sessions error:', shopify.sessions_debug);
+      // If it's a scope issue, show in button
+      if (shopify.sessions_debug.includes('denied') || shopify.sessions_debug.includes('Access')) {
+        if (btn) btn.title = 'Sessions need read_analytics scope: ' + shopify.sessions_debug;
+      }
+    }
 
     // Meta spend & purchases
     if (meta.spend)     document.getElementById('di-spend').value     = Math.round(meta.spend);

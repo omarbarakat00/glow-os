@@ -162,16 +162,28 @@ module.exports = async function handler(req, res) {
 
     // Sessions via ShopifyQL GraphQL
     let sessionsToday = 0;
+    let sessionsDebug = null;
     try {
       const gql = await shopifyGQL(`{
-        shopifyqlQuery(query: "FROM sessions SHOW sessions TIMESERIES day SINCE ${todayKey} UNTIL ${todayKey}") {
+        shopifyqlQuery(query: "FROM sessions SHOW sessions SINCE today UNTIL today") {
           tableData { rows }
           parseErrors { code message }
         }
       }`);
-      const rows = gql?.data?.shopifyqlQuery?.tableData?.rows || [];
-      if (rows.length > 0) sessionsToday = parseInt(rows[0].sessions) || 0;
+      // Surface any GraphQL-level errors (e.g. ACCESS_DENIED for missing read_analytics scope)
+      if (gql.errors && gql.errors.length > 0) {
+        sessionsDebug = gql.errors[0].message;
+      } else {
+        const parseErrs = gql?.data?.shopifyqlQuery?.parseErrors || [];
+        if (parseErrs.length > 0) {
+          sessionsDebug = 'ShopifyQL: ' + parseErrs[0].message;
+        } else {
+          const rows = gql?.data?.shopifyqlQuery?.tableData?.rows || [];
+          if (rows.length > 0) sessionsToday = parseInt(rows[0].sessions) || 0;
+        }
+      }
     } catch(e) {
+      sessionsDebug = e.message;
       console.warn('[Sessions]', e.message);
     }
 
@@ -180,6 +192,7 @@ module.exports = async function handler(req, res) {
       rev_today:      today.rev,
       orders_today:   today.orders,
       sessions_today: sessionsToday,
+      sessions_debug: sessionsDebug,
       aov:            today.aov,
       // MTD
       rev_mtd:      mtd.rev,
