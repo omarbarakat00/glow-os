@@ -52,7 +52,7 @@ module.exports = async function handler(req, res) {
         throw new Error(`Shopify orders API: ${err.errors || r.status}`);
       }
       const data = await r.json();
-      orders = orders.concat((data.orders || []).filter(o => !o.cancelled_at));
+      orders = orders.concat(data.orders || []);
       pages++;
 
       // Cursor-based pagination via Link header
@@ -64,14 +64,17 @@ module.exports = async function handler(req, res) {
   }
 
   function metrics(orders) {
-    const rev = orders.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+    // Count ALL orders placed (matches Shopify Analytics) — includes cancelled
     const count = orders.length;
-    const refunds = orders.filter(o => o.refunds && o.refunds.length > 0).length;
+    // Revenue only from non-cancelled orders
+    const active  = orders.filter(o => !o.cancelled_at);
+    const rev     = active.reduce((s, o) => s + parseFloat(o.subtotal_price || o.total_price || 0), 0);
+    const refunds = active.filter(o => o.refunds && o.refunds.length > 0).length;
     return {
       rev: Math.round(rev),
       orders: count,
-      aov: count > 0 ? Math.round(rev / count) : 0,
-      return_rate: count > 0 ? parseFloat((refunds / count).toFixed(3)) : 0,
+      aov: active.length > 0 ? Math.round(rev / active.length) : 0,
+      return_rate: active.length > 0 ? parseFloat((refunds / active.length).toFixed(3)) : 0,
     };
   }
 
@@ -93,7 +96,7 @@ module.exports = async function handler(req, res) {
     // Fetch from whichever is earlier: 30 days ago or month start
     const fetchSince = new Date(Math.min(monthStart, thirtyDaysAgo)).toISOString();
 
-    const FIELDS = 'id,total_price,line_items,created_at,cancelled_at,refunds';
+    const FIELDS = 'id,total_price,subtotal_price,line_items,created_at,cancelled_at,refunds';
 
     const [allOrders, activeCount, draftCount] = await Promise.all([
       fetchOrders(fetchSince, FIELDS),
