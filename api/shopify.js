@@ -1,5 +1,5 @@
 // api/shopify.js
-// Vercel serverless function â proxies Shopify Admin API
+// Vercel serverless function Ã¢ÂÂ proxies Shopify Admin API
 // Env vars required: SHOPIFY_STORE, SHOPIFY_ACCESS_TOKEN
 
 module.exports = async function handler(req, res) {
@@ -75,7 +75,7 @@ module.exports = async function handler(req, res) {
   }
 
   function metrics(orders) {
-    // Count ALL orders placed (matches Shopify Analytics) â includes cancelled
+    // Count ALL orders placed (matches Shopify Analytics) Ã¢ÂÂ includes cancelled
     const count = orders.length;
     // Revenue only from non-cancelled orders
     const active  = orders.filter(o => !o.cancelled_at);
@@ -164,9 +164,9 @@ module.exports = async function handler(req, res) {
     let sessionsToday = 0;
     let sessionsDebug = null;
     try {
-      // DEBUG: verify token scopes
-      const scopeResp = await shopify('/oauth/access_scopes.json');
-      const scopes = (scopeResp?.access_scopes || []).map(s => s.handle);
+      // DEBUG: verify token scopes via GraphQL
+      const scopeGql = await shopifyGQL(`{ app { installation { accessScopes { handle } } } }`);
+      const scopes = (scopeGql?.data?.app?.installation?.accessScopes || []).map(s => s.handle);
       sessionsDebug = 'SCOPES:' + scopes.join(',');
       const gql = await shopifyGQL(`{
         shopifyqlQuery(query: "FROM sessions SHOW sessions SINCE today UNTIL today") {
