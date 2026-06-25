@@ -1,5 +1,5 @@
 // api/shopify.js
-// Vercel serverless function Ã¢ÂÂ proxies Shopify Admin API
+// Vercel serverless function ÃÂ¢ÃÂÃÂ proxies Shopify Admin API
 // Env vars required: SHOPIFY_STORE, SHOPIFY_ACCESS_TOKEN
 
 module.exports = async function handler(req, res) {
@@ -75,7 +75,7 @@ module.exports = async function handler(req, res) {
   }
 
   function metrics(orders) {
-    // Count ALL orders placed (matches Shopify Analytics) Ã¢ÂÂ includes cancelled
+    // Count ALL orders placed (matches Shopify Analytics) ÃÂ¢ÃÂÃÂ includes cancelled
     const count = orders.length;
     // Revenue only from non-cancelled orders
     const active  = orders.filter(o => !o.cancelled_at);
@@ -164,10 +164,7 @@ module.exports = async function handler(req, res) {
     let sessionsToday = 0;
     let sessionsDebug = null;
     try {
-      // DEBUG: verify token scopes via GraphQL
-      const scopeGql = await shopifyGQL(`{ app { installation { accessScopes { handle } } } }`);
-      const scopes = (scopeGql?.data?.app?.installation?.accessScopes || []).map(s => s.handle);
-      sessionsDebug = 'SCOPES:' + scopes.join(',');
+      sessionsDebug = 'store:' + STORE.split('.')[0];
       const gql = await shopifyGQL(`{
         shopifyqlQuery(query: "FROM sessions SHOW sessions SINCE today UNTIL today") {
           tableData { rows columns { name dataType } }
@@ -176,7 +173,7 @@ module.exports = async function handler(req, res) {
       }`);
       // Surface any GraphQL-level errors (e.g. ACCESS_DENIED for missing read_analytics scope)
       if (gql.errors && gql.errors.length > 0) {
-        sessionsDebug = gql.errors[0].message;
+        sessionsDebug = 'GQL_ERR:' + JSON.stringify(gql.errors);
       } else {
         const parseErrs = gql?.data?.shopifyqlQuery?.parseErrors || [];
         if (parseErrs.length > 0) {
