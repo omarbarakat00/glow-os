@@ -1,5 +1,5 @@
 // api/shopify.js
-// Vercel serverless function ÃÂ¢ÃÂÃÂ proxies Shopify Admin API
+// Vercel serverless function — proxies Shopify Admin API
 // Env vars required: SHOPIFY_STORE, SHOPIFY_ACCESS_TOKEN
 
 module.exports = async function handler(req, res) {
@@ -75,7 +75,7 @@ module.exports = async function handler(req, res) {
   }
 
   function metrics(orders) {
-    // Count ALL orders placed (matches Shopify Analytics) ÃÂ¢ÃÂÃÂ includes cancelled
+    // Count ALL orders placed (matches Shopify Analytics) — includes cancelled
     const count = orders.length;
     // Revenue only from non-cancelled orders
     const active  = orders.filter(o => !o.cancelled_at);
@@ -162,29 +162,19 @@ module.exports = async function handler(req, res) {
 
     // Sessions via ShopifyQL GraphQL
     let sessionsToday = 0;
-    let sessionsDebug = null;
     try {
-      sessionsDebug = 'store:' + STORE.split('.')[0];
       const gql = await shopifyGQL(`{
         shopifyqlQuery(query: "FROM sessions SHOW sessions SINCE today UNTIL today") {
           tableData { rows columns { name dataType } }
           parseErrors
         }
       }`);
-      // Surface any GraphQL-level errors (e.g. ACCESS_DENIED for missing read_analytics scope)
-      if (gql.errors && gql.errors.length > 0) {
-        sessionsDebug = 'GQL_ERR:' + JSON.stringify(gql.errors);
-      } else {
-        const parseErrs = gql?.data?.shopifyqlQuery?.parseErrors || [];
-        if (parseErrs.length > 0) {
-          sessionsDebug = 'ShopifyQL: ' + JSON.stringify(parseErrs[0]);
-        } else {
-          const rows = gql?.data?.shopifyqlQuery?.tableData?.rows || [];
-          if (rows.length > 0) sessionsToday = parseInt(rows[0].sessions) || 0;
-        }
+      const parseErrs = gql?.data?.shopifyqlQuery?.parseErrors || [];
+      if (parseErrs.length === 0) {
+        const rows = gql?.data?.shopifyqlQuery?.tableData?.rows || [];
+        if (rows.length > 0) sessionsToday = parseInt(rows[0].sessions) || 0;
       }
     } catch(e) {
-      sessionsDebug = e.message;
       console.warn('[Sessions]', e.message);
     }
 
@@ -193,7 +183,6 @@ module.exports = async function handler(req, res) {
       rev_today:      today.rev,
       orders_today:   today.orders,
       sessions_today: sessionsToday,
-      sessions_debug: sessionsDebug,
       aov:            today.aov,
       // MTD
       rev_mtd:      mtd.rev,
