@@ -36,7 +36,7 @@ module.exports = async function handler(req, res) {
   }
 
   async function shopifyGQL(gqlQuery) {
-    const r = await fetch(`${BASE}/graphql.json`, {
+    const r = await fetch(`https://${STORE}/admin/api/2024-04/graphql.json`, {
       method: 'POST',
       headers: { ...HDRS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: gqlQuery })
