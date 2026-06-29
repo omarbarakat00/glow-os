@@ -2077,12 +2077,14 @@ async function syncFromShopifyMeta() {
   const btn = document.getElementById('sync-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing...'; }
   try {
-    const [shopRes, metaRes] = await Promise.allSettled([
+    const [shopRes, metaRes, clarityRes] = await Promise.allSettled([
       fetch('/api/shopify').then(r => r.json()),
-      fetch('/api/meta').then(r => r.json())
+      fetch('/api/meta').then(r => r.json()),
+      fetch('/api/clarity').then(r => r.json())
     ]);
     const shopify = shopRes.status === 'fulfilled' ? shopRes.value : {};
     const meta    = metaRes.status    === 'fulfilled' ? metaRes.value    : {};
+    const clarityD = clarityRes.status === 'fulfilled' ? clarityRes.value : {};
 
     // Revenue: try today first, then yesterday fallback
     const revToday = shopify.rev_today || shopify.yesterday?.rev_today || '';
@@ -2092,15 +2094,10 @@ async function syncFromShopifyMeta() {
     const ordToday = shopify.orders_today || shopify.yesterday?.orders_today || '';
     if (ordToday) document.getElementById('di-orders').value = ordToday;
 
-    // Sessions
-    if (shopify.sessions_today > 0) {
-      document.getElementById('di-sessions').value = shopify.sessions_today;
-    } else if (shopify.sessions_debug) {
-      console.warn('Sessions error:', shopify.sessions_debug);
-      // If it's a scope issue, show in button
-      if (shopify.sessions_debug.includes('denied') || shopify.sessions_debug.includes('Access')) {
-        if (btn) btn.title = 'Sessions need read_analytics scope: ' + shopify.sessions_debug;
-      }
+    // Sessions (from Clarity)
+    const clSess = clarityD.sessions_today || 0;
+    if (clSess > 0) {
+      document.getElementById('di-sessions').value = clSess;
     }
 
     // Meta spend & purchases
