@@ -325,9 +325,9 @@ tr:hover .edit-row-btn{opacity:1}
           <div id="o-aov-d" style="margin-top:6px;font-size:11px;font-family:'SF Mono',monospace"></div>
         </div>
         <div class="card">
-          <div class="c-lbl">Conv. Rate</div>
-          <div class="c-val" id="o-cvr">—</div>
-          <div class="c-sub">sessions → orders</div>
+          <div class="c-lbl">Visits Today</div>
+          <div class="c-val" id="o-sess">—</div>
+          <div class="c-sub" id="o-cvr-lbl">CVR: —</div>
         </div>
         <div class="card">
           <div class="c-lbl">Net Profit (June)</div>
@@ -881,15 +881,18 @@ async function refresh() {
     // ── 1. Fetch all data sources in parallel ──
     showLoading('Fetching Shopify, Meta Ads & Sheets...');
 
-    const [shopifyResult, metaResult, financeResult] = await Promise.allSettled([
+    const [shopifyResult, metaResult, financeResult, clarityResult] = await Promise.allSettled([
       fetch('/api/shopify').then(r => r.json()),
       fetch('/api/meta').then(r => r.json()),
       fetch('/api/sheets').then(r => r.json()),
+      fetch('/api/clarity').then(r => r.json()),
     ]);
 
-    const shopify = shopifyResult.status === 'fulfilled' ? shopifyResult.value : {};
-    const meta    = metaResult.status    === 'fulfilled' ? metaResult.value    : {};
-    const finance = financeResult.status === 'fulfilled' ? financeResult.value : {};
+    const shopify  = shopifyResult.status  === 'fulfilled' ? shopifyResult.value  : {};
+    const meta     = metaResult.status     === 'fulfilled' ? metaResult.value     : {};
+    const finance  = financeResult.status  === 'fulfilled' ? financeResult.value  : {};
+    const clarityD = clarityResult.status  === 'fulfilled' ? clarityResult.value  : {};
+    const visitsToday = clarityD.sessions_today || 0;
 
     // Show per-section errors
     if (shopify.error) showSectionErr('shopify', shopify.error);
@@ -925,6 +928,7 @@ async function refresh() {
     render({ shopify, meta, finance, briefing, fin_summary, alerts, yesterday,
       last7days: shopify.last7days || [],
       best_ad:   meta.best_ad      || null,
+      visitsToday,
     });
 
     document.getElementById('upd').textContent =
@@ -981,6 +985,7 @@ function fmtPct(n) { return ((n || 0) * 100).toFixed(1) + '%'; }
 
 function render(d) {
   const s    = d.shopify   || {};
+  const visitsToday = d.visitsToday || 0;
   const m    = d.meta      || {};
   const f    = d.finance   || {};
   const yest = d.yesterday || {};
@@ -1026,7 +1031,8 @@ function render(d) {
   document.getElementById('o-cpa-d').innerHTML   = delta(m.cpa, yest.cpa, true);
   document.getElementById('o-aov').textContent   = fmt(s.aov);
   document.getElementById('o-aov-d').innerHTML   = delta(s.aov, yest.aov);
-  document.getElementById('o-cvr').textContent   = s.cvr ? fmtPct(s.cvr) : '—';
+  document.getElementById('o-sess').textContent   = visitsToday > 0 ? visitsToday.toLocaleString() : '—';
+  document.getElementById('o-cvr-lbl').textContent = visitsToday > 0 && s.orders_today ? 'CVR: ' + fmtPct(s.orders_today / visitsToday) : 'CVR: —';
   document.getElementById('o-profit').textContent = fmt(f.profit);
 
   // ── Briefing & alerts ──
