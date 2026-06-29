@@ -1,53 +1,55 @@
+// In-memory cache to stay within Clarity's 10 req/day limit
+let _cache = null;
+let _cacheTime = 0;
+const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
 
-  const PROJECT_ID = process.env.CLARITY_PROJECT_ID;
   const TOKEN = process.env.CLARITY_TOKEN;
+  if (!TOKEN) return res.status(500).json({ error: 'Missing CLARITY_TOKEN' });
 
-  if (!PROJECT_ID || !TOKEN) {
-    return res.status(500).json({ error: 'Missing Clarity env vars' });
+  const now = Date.now();
+  if (_cache !== null && (now - _cacheTime) < CACHE_TTL) {
+    return res.json({ sessions_today: _cache, cached: true, cache_age_min: Math.round((now - _cacheTime) / 60000) });
   }
 
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
-  const startDate = todayStr + 'T00:00:00Z';
-  const endDate = todayStr + 'T23:59:59Z';
-
   try {
-    const url = `https://www.clarity.ms/export/api/v1/${PROJECT_ID}/metrics?startDate=${startDate}&endDate=${endDate}`;
-    
+    // Clarity Data Export API - last 24h, no dimension (overall total)
+    const url = 'https://www.clarity.ms/export-data/api/v1/project-live-insights?numOfDays=1';
     const r = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${TOKEN}`,
-        'Accept': 'application/json'
+        'Content-Type': 'application/json'
       }
     });
 
-    const text = await r.text();
-    let data;
-    try { data = JSON.parse(text); } catch(e) { data = { raw_text: text.substring(0, 500) }; }
-
     if (!r.ok) {
-      const url2 = `https://www.clarity.ms/api/v1/${PROJECT_ID}/dashboard?startDate=${startDate}&endDate=${endDate}`;
-      const r2 = await fetch(url2, {
-        headers: { 'Authorization': `Bearer ${TOKEN}`, 'Accept': 'application/json' }
-      });
-      const text2 = await r2.text();
-      let data2;
-      try { data2 = JSON.parse(text2); } catch(e) { data2 = { raw_text: text2.substring(0, 500) }; }
-      return res.json({ endpoint: 'v1-dashboard', status: r2.status, data: data2, fallback_status: r.status, fallback_snippet: text.substring(0,200) });
+      const errText = await r.text();
+      return res.status(r.status).json({ error: 'Clarity API error', status: r.status, detail: errText.substring(0, 300) });
     }
 
-    let sessionsToday = 0;
+    const data = await r.json();
+
+    // Traffic metric contains totalSessionCount and totalBotSessionCount per row
+    // Sum real (non-bot) sessions across all rows
+    let sessionsTotal = 0;
     if (Array.isArray(data)) {
-      const m = data.find(x => /session/i.test(x.metric || x.name || x.metricName || ''));
-      if (m) sessionsToday = parseInt(m.value || m.count || 0);
-    } else if (data && typeof data === 'object') {
-      sessionsToday = parseInt(data.sessions || data.Sessions || data.totalSessions || data.TotalSessions || 0);
+      const traffic = data.find(m => m.metricName === 'Traffic');
+      if (traffic && Array.isArray(traffic.information)) {
+        sessionsTotal = traffic.information.reduce((sum, row) => {
+          const total = parseInt(row.totalSessionCount || 0);
+          const bots = parseInt(row.totalBotSessionCount || 0);
+          return sum + Math.max(0, total - bots);
+        }, 0);
+      }
     }
 
-    return res.json({ sessions_today: sessionsToday, date: todayStr, raw: data });
+    _cache = sessionsTotal;
+    _cacheTime = now;
+
+    return res.json({ sessions_today: sessionsTotal, cached: false, raw_count: data?.length });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
