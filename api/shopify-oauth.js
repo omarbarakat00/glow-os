@@ -1,26 +1,21 @@
-export default async function handler(req, res) {
-  const { code, shop } = req.query;
-  if (!code || !shop) {
-    res.status(400).send('Missing code or shop');
-    return;
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const STORE = process.env.SHOPIFY_STORE;
+  const TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
+  const QUERY = JSON.stringify({ query: '{ shopifyqlQuery(query: "FROM sessions SHOW sessions SINCE today UNTIL today") { tableData { rows } parseErrors } }' });
+  const versions = ['2022-10', '2023-01', '2023-10', '2024-01', '2024-04', '2024-07', '2024-10', '2025-01', '2025-04'];
+  const results = {};
+  for (const v of versions) {
+    try {
+      const r = await fetch(`https://${STORE}/admin/api/${v}/graphql.json`, {
+        method: 'POST',
+        headers: { 'X-Shopify-Access-Token': TOKEN, 'Content-Type': 'application/json' },
+        body: QUERY
+      });
+      const d = await r.json();
+      if (d.errors) results[v] = 'ERR: ' + d.errors[0].message.substring(0, 60);
+      else results[v] = 'OK rows=' + JSON.stringify(d?.data?.shopifyqlQuery?.tableData?.rows);
+    } catch(e) { results[v] = 'THROW: ' + e.message.substring(0, 40); }
   }
-  try {
-    const r = await fetch(`https://${shop}/admin/oauth/access_token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client_id: 'cc150caf8ab17a60a750a68b56534315',
-        client_secret: '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',
-        code
-      })
-    });
-    const data = await r.json();
-    if (data.access_token) {
-      res.send('<h2>New Token</h2><p>Token: ' + data.access_token + '</p><p>Scope: ' + data.scope + '</p>');
-    } else {
-      res.status(400).json(data);
-    }
-  } catch(e) {
-    res.status(500).send('Error: ' + e.message);
-  }
-}
+  res.json(results);
+};
