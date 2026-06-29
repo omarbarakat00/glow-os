@@ -142,43 +142,34 @@ module.exports = async function handler(req, res) {
     const yest  = metrics(yestOrders);
     const mtd   = metrics(mtdOrders);
 
-    // Sessions via ShopifyQL -- requires read_analytics + read_reports scopes
+    // Sessions: ShopifyQL not available on Shopify Basic plan
     let sessionsToday = 0;
-    let sessionsDebug = null;
-    try {
-      sessionsDebug = 'store:' + STORE.split('.')[0];
-      const gql = await shopifyGQL(`{
-        shopifyqlQuery(query: "FROM sessions SHOW sessions SINCE today UNTIL today") {
-          tableData { rows columns { name dataType } }
-          parseErrors
-        }
-      }`);
-      if (gql.errors && gql.errors.length > 0) {
-        sessionsDebug = 'GQL_ERR:' + JSON.stringify(gql.errors);
-      } else {
-        const parseErrs = gql?.data?.shopifyqlQuery?.parseErrors || [];
-        if (parseErrs.length > 0) {
-          sessionsDebug = 'ShopifyQL:' + JSON.stringify(parseErrs[0]);
-        } else {
-          const rows = gql?.data?.shopifyqlQuery?.tableData?.rows || [];
-          sessionsDebug = 'rows:' + JSON.stringify(rows.slice(0, 2));
-          if (rows.length > 0) {
-            const firstRow = rows[0];
-            if (Array.isArray(firstRow)) {
-              sessionsToday = parseInt(firstRow[0]) || 0;
-            } else {
-              sessionsToday = parseInt(firstRow.sessions) || 0;
-            }
-          }
-          if (sessionsToday > 0) sessionsDebug = 'ok:' + sessionsToday;
-        }
-      }
-    } catch(e) {
-      sessionsDebug = 'catch:' + e.message;
-      console.warn('[Sessions]', e.message);
-    }
 
     res.json({
+      rev_today:      today.rev,
+      orders_today:   today.orders,
+      sessions_today: sessionsToday,
+      aov:            today.aov,
+      rev_mtd:      mtd.rev,
+      return_rate:  mtd.return_rate,
+      active:  activeCount,
+      drafts:  draftCount,
+      cvr:     0,
+      top,
+      last7days,
+      yesterday: {
+        rev_today:    yest.rev,
+        orders_today: yest.orders,
+        aov:          yest.aov,
+        return_rate:  yest.return_rate,
+      },
+    });
+  } catch (e) {
+    console.error('[Shopify]', e);
+    res.status(500).json({ error: e.message });
+  }
+};
+res.json({
       rev_today:      today.rev,
       orders_today:   today.orders,
       sessions_today: sessionsToday,
